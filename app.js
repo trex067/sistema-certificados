@@ -42,12 +42,10 @@ async function importarDoSheets() {
     const link = document.getElementById('linkSheets').value.trim();
     if (!link) return alert("Por favor, cole o link da planilha.");
     
-    // Extrai o ID da URL do Google Sheets
     const match = link.match(/\/d\/(.*?)(\/|$)/);
     if (!match) return alert("Link inválido. Certifique-se de colar a URL completa da planilha.");
     
     const id = match[1];
-    // URL nativa do Google para exportar a planilha pública como CSV
     const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`;
 
     try {
@@ -56,8 +54,6 @@ async function importarDoSheets() {
         if (!response.ok) throw new Error("A planilha está bloqueada. Altere o compartilhamento para 'Qualquer pessoa com o link'.");
         
         const csvText = await response.text();
-        
-        // Separa as linhas e limpa as aspas do CSV
         const linhas = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/(^"|"$)/g, '')));
         
         processarArrayMatriz(linhas);
@@ -69,19 +65,21 @@ async function importarDoSheets() {
     }
 }
 
-// Via CTRL+V (Paste) - Global
+// Via CTRL+V (Paste) - Global e Restaurado
 document.addEventListener('paste', (e) => {
-    // Ignora se o usuário estiver colando texto dentro de um campo de digitação (input)
+    // A TRAVA: Ignora o Ctrl+V global se a pessoa estiver digitando manualmente dentro da tabela ou em outro input
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
     let clipboardData = e.clipboardData || window.clipboardData;
     let pastedData = clipboardData.getData('Text');
     if (!pastedData) return;
 
+    // O Excel separa colunas por TAB (\t) e linhas por quebra de linha (\n)
     const linhas = pastedData.split('\n').map(linha => linha.split('\t'));
     processarArrayMatriz(linhas);
 });
 
+// O Motor de Processamento
 function processarArrayMatriz(matriz) {
     let adicionados = 0;
     let duplicados = 0;
@@ -97,7 +95,6 @@ function processarArrayMatriz(matriz) {
 
         if (!cpfValidado.valido) continue;
 
-        // Bloqueia duplicados verificando o CPF na lista existente
         let duplicado = listaFuncionarios.find(f => f.cpf === cpfValidado.cpfFormatado);
         if (duplicado) {
             duplicados++;
@@ -107,7 +104,7 @@ function processarArrayMatriz(matriz) {
         let dataAdm = converterData(linha[3]);
         
         listaFuncionarios.push({
-            id: Date.now() + i, // ID único para a linha
+            id: Date.now() + i, 
             codigo: cod,
             nome: nome,
             cpf: cpfValidado.cpfFormatado,
