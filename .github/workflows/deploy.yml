@@ -2,25 +2,30 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout Repository
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Injetar URL Segura no Código
+      - name: Injetar Segredos no HTML e JS
         run: |
-          sed -i 's|__API_URL_SECRET__|${{ secrets.API_GAS_URL }}|g' index.html
-          sed -i 's|__LINK_EXCEL_SECRET__|${{ secrets.LINK_EXCEL }}|g' index.html
-          sed -i 's|__LINK_PLANILHA_SECRET__|${{ secrets.LINK_PLANILHA }}|g' index.html
-          sed -i 's|__TEMPLATE_SECRET__|${{ secrets.TEMPLATE_ID }}|g' index.html
+          # 1. Injeta a API no app.js
+          sed -i "s|API_URL_SECRET|${{ secrets.API_GAS_URL }}|g" app.js
+          
+          # 2. Injeta os Links de Template no index.html
+          sed -i "s|LINK_EXCEL_SECRET|${{ secrets.LINK_EXCEL }}|g" index.html
+          sed -i "s|LINK_PLANILHA_SECRET|${{ secrets.LINK_PLANILHA }}|g" index.html
 
-      - name: Deploy to GitHub Pages
+      - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
