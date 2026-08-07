@@ -1,3 +1,4 @@
+const API_URL = "API_URL_SECRET";
 let listaFuncionarios = [];
 let listaTSTs = [];
 let assinaturaDataUrl = null;
