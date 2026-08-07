@@ -100,46 +100,79 @@ document.addEventListener('paste', (e) => {
 });
 
 function processarTextoBaguncado(texto) {
-    let linhas = texto.split('\n');
+    // 1. Unificador de Linhas: Resolve o erro de relatórios que quebram a mesma pessoa em várias linhas
+    let textoNormalizado = texto.replace(/\r/g, '')
+                                .replace(/\n\s*(==>|Colaborador|CPF|Admissão|Documento)/gi, ' $1');
+
+    let linhas = textoNormalizado.split('\n');
     let adicionados = 0;
     let duplicados = 0;
 
+    // Expressões Regulares de Alta Precisão (Modo Caçador)
+    const regexCpf = /(?:\d{3}[\.\s,\-\/]*){3}\d{2}/; 
+    const regexData = /\d{2}[\/\.-]\d{2}[\/\.-]\d{2,4}|\d{4}-\d{2}-\d{2}|\d{2}\s+de\s+[a-zA-Z]{3,9}\s+de\s+\d{2,4}/i;
+    const regexCodMarkers = /(?:c[óo]d(?:igo)?|id)\s*[:=\-]?\s*#?\s*([0-9a-z\-]+)/i;
+
     linhas.forEach(linha => {
         let textoLinha = linha.trim();
-        if (!textoLinha) return;
+        // Ignora linhas inúteis de separação
+        if (!textoLinha || textoLinha.includes('---')) return;
 
-        // Expressão Regular para achar qualquer coisa que pareça um CPF (com ou sem ponto)
-        let regexCpf = /(?:\d{3}[\.\s-]?){3}\d{2}|\d{11}/;
         let matchCpf = textoLinha.match(regexCpf);
-
         if (matchCpf) {
             let cpfBruto = matchCpf[0];
             let cpfValidado = formatarEValidarCPF(cpfBruto);
 
             if (cpfValidado.valido) {
-                // Caçador de Nomes: Tira o CPF, tira números soltos, tira datas e limpa a sujeira
-                let nomeSujo = textoLinha.replace(matchCpf[0], '') // Tira o CPF
-                                         .replace(/\d{2}\/\d{2}\/\d{4}/g, '') // Tira datas
-                                         .replace(/[0-9]/g, '') // Tira códigos avulsos
-                                         .replace(/[\t;-]/g, ' ') // Troca tabulações por espaço
-                                         .trim();
+                // CAÇADOR DE DATA
+                let matchData = textoLinha.match(regexData);
+                let dataAdmStr = matchData ? matchData[0] : null;
+                let dataAdm = converterData(dataAdmStr);
+
+                // CAÇADOR DE CÓDIGO
+                let cod = "";
+                let matchCod = textoLinha.match(regexCodMarkers);
+                if (matchCod && matchCod[1]) {
+                    cod = matchCod[1];
+                } else {
+                    // Tenta achar um número isolado no início (ex: "3;", "[7]", "029 |")
+                    let matchNumInicio = textoLinha.match(/^\[?#?(\d+)\]?[\s;\|,-]/);
+                    if (matchNumInicio) cod = matchNumInicio[1];
+                }
+                // Limpeza de zeros à esquerda no Código e remoção do termo "Cod-"
+                if (!isNaN(cod) && cod !== "") cod = parseInt(cod, 10).toString();
+                if (cod.toLowerCase().startsWith('cod-')) cod = cod.substring(4); 
                 
-                // Filtra para pegar apenas palavras reais
-                let nomeLimpo = nomeSujo.split(' ').filter(p => p.length > 2).join(' ').toUpperCase();
+                // CAÇADOR DE NOME (O mais complexo)
+                // Remove tudo o que é inútil da linha para sobrar só o nome
+                let lixos = [
+                    cpfBruto, dataAdmStr, matchCod ? matchCod[0] : "",
+                    /Nome do Colaborador/gi, /Colaborador/gi, /Documento/gi, /Entrou na obra em/gi,
+                    /Admissão/gi, /adm/gi, /INICIO/gi, /data/gi, /cpf/gi, /erro de leitura/gi, 
+                    /c[óo]digo/gi, /cod/gi, /id/gi, /==>/g, /\*+/g, /\[|\]/g
+                ];
+                
+                let nomeSujo = textoLinha;
+                lixos.forEach(lixo => { if (lixo) nomeSujo = nomeSujo.replace(lixo, ' '); });
+
+                // Mantém só letras, remove espaços duplos e transforma em MAIÚSCULO
+                let nomeLimpo = nomeSujo.replace(/[^a-zA-ZáéíóúãõçÁÉÍÓÚÃÕÇ\s]/g, ' ')
+                                        .replace(/\s+/g, ' ')
+                                        .trim()
+                                        .toUpperCase();
+                
+                // Remove letras soltas residuais da sujeira (mantém o "E" de nomes)
+                nomeLimpo = nomeLimpo.split(' ').filter(p => p.length > 1 || p === 'E').join(' ');
                 if (!nomeLimpo) nomeLimpo = "NOME NÃO ENCONTRADO";
 
-                // Caçador de Data: Tenta achar uma data de admissão perdida na linha
-                let matchData = textoLinha.match(/\d{2}\/\d{2}\/\d{4}/);
-                let dataAdm = matchData ? converterData(matchData[0]) : new Date();
-
-                // Checa se já existe na tabela
+                // Checa se o CPF já está na tabela do site
                 let duplicado = listaFuncionarios.find(f => f.cpf === cpfValidado.cpfFormatado);
                 if (duplicado) {
                     duplicados++;
                 } else {
                     listaFuncionarios.push({
-                        id: Date.now() + Math.floor(Math.random() * 1000), // ID único
-                        codigo: "",
+                        id: Date.now() + Math.floor(Math.random() * 10000),
+                        codigo: cod,
                         nome: nomeLimpo,
                         cpf: cpfValidado.cpfFormatado,
                         admissao: dataAdm
@@ -151,7 +184,7 @@ function processarTextoBaguncado(texto) {
     });
 
     if (adicionados > 0 || duplicados > 0) {
-        alert(`✨ MÁGICA CONCLUÍDA!\n\n✅ ${adicionados} Novos funcionários inseridos.\n⚠️ ${duplicados} CPFs duplicados foram ignorados.`);
+        alert(`✨ MÁGICA CONCLUÍDA!\n\n✅ ${adicionados} Novos funcionários inseridos e formatados.\n⚠️ ${duplicados} CPFs duplicados foram ignorados.`);
         renderizarTabela();
     }
 }
