@@ -1,51 +1,88 @@
+/* =========================================
+   IDENTIDADE VISUAL DA CONSTRUTORA
+   ========================================= */
 :root {
-    --piacentini-black: #0d0d0d;
-    --piacentini-dark-gray: #2b2b2b;
-    --piacentini-orange: #FF8C00;
-    --piacentini-orange-hover: #e67e00;
-    --piacentini-light-gray: #f4f4f4;
+    --cor-primaria: #ff6600; /* Laranja */
+    --cor-secundaria: #343a40; /* Chumbo Escuro */
+    --cor-fundo: #f8f9fa;
+    --cor-texto: #212529;
 }
 
-body { background-color: var(--piacentini-light-gray); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-/* Global Custom */
-.bg-construtora { background-color: var(--piacentini-black) !important; border-bottom: 4px solid var(--piacentini-orange); }
-.border-piacentini { border-bottom: 3px solid var(--piacentini-orange) !important; }
-.text-piacentini { color: var(--piacentini-orange) !important; }
+/* Painéis e Cards */
+.card-custom {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-top: 4px solid var(--cor-primaria);
+    margin-bottom: 2rem;
+}
 
-/* Cards e Botões */
-.card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; overflow: hidden; }
-.card-header { background-color: var(--piacentini-dark-gray) !important; color: #ffffff !important; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 15px 20px; }
-.btn-construtora { background-color: var(--piacentini-orange) !important; color: #000 !important; font-weight: 800; border: none; border-radius: 6px; transition: all 0.3s ease; }
-.btn-construtora:hover { background-color: var(--piacentini-orange-hover) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 140, 0, 0.4); }
-.btn-outline-construtora { border: 2px solid var(--piacentini-dark-gray) !important; color: var(--piacentini-dark-gray) !important; font-weight: 600; }
-.btn-outline-construtora:hover { background-color: var(--piacentini-dark-gray) !important; color: var(--piacentini-orange) !important; }
+/* Divisórias da Tabela (O que você desenhou na imagem) */
+.table-bordered th, .table-bordered td {
+    border-left: 1px solid #dee2e6;
+    border-right: 1px solid #dee2e6;
+    vertical-align: middle;
+}
 
-/* Tabela de NRs */
-.table-responsive { border-radius: 8px; scrollbar-width: thin; scrollbar-color: var(--piacentini-orange) #ddd; }
-.table th { background-color: #e9ecef; color: var(--piacentini-dark-gray); vertical-align: middle; }
-.text-nowrap { white-space: nowrap !important; }
+/* Correção dos textos cortados nas células */
+.col-codigo { min-width: 90px; font-weight: bold;}
+.col-nome { min-width: 250px; white-space: normal; } /* Permite quebrar linha se for muito grande, sem cortar */
+.col-cpf { min-width: 140px; }
+.col-data { min-width: 120px; }
 
-/* DIVISÓRIAS DAS COLUNAS DE NR (O que você pediu!) */
-.col-nr { border-left: 3px solid #dee2e6 !important; min-width: 170px; }
-.col-dados { min-width: 130px; }
+/* Efeito Esbranquiçado nas NRs Desativadas */
+.nr-desativada {
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
+.nr-ativada {
+    opacity: 1;
+    font-weight: bold;
+    color: var(--cor-primaria);
+    transition: opacity 0.3s ease;
+}
 
-/* EFEITO ESBRANQUIÇADO QUANDO DESATIVADO */
-.data-desativada { opacity: 0.4; transition: opacity 0.3s ease; }
-.data-ativada { opacity: 1; transition: opacity 0.3s ease; }
+/* Switches (Botões de Ligar NR) */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    cursor: pointer;
+}
+.form-switch .form-check-input:checked {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+}
 
-/* Customização dos botões das NRs (btn-check) no TST */
-.btn-outline-secondary { border-color: #ccc; color: #555; }
-.btn-check:checked + .btn-outline-secondary { background-color: var(--piacentini-dark-gray); color: var(--piacentini-orange); border-color: var(--piacentini-dark-gray); }
+/* Rodapé e Créditos */
+.footer-creditos {
+    background-color: var(--cor-secundaria);
+    color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+.footer-creditos a {
+    color: var(--cor-primaria);
+    text-decoration: none;
+    font-weight: bold;
+}
+.footer-creditos a:hover {
+    color: #ff8533;
+    text-decoration: underline;
+}
 
-/* Switch da Tabela */
-.form-switch .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
-.form-switch .form-check-input:checked { background-color: #198754; border-color: #198754; }
-
-/* Assinatura Box (Ajustado para não vazar) */
-.signature-container { border: 2px dashed #bbb; background-color: #fff; border-radius: 8px; display: inline-block; padding: 5px;}
-canvas { touch-action: none; cursor: crosshair; display: block; }
-
-/* Inputs da Tabela Transparentes para Edição */
-.input-tabela { border: 1px solid transparent; background: transparent; padding: 2px 5px; width: 100%; border-radius: 4px; transition: 0.2s;}
-.input-tabela:focus { border: 1px solid var(--piacentini-orange); background: #fff; outline: none; }
+/* Canvas de Assinatura */
+#canvasAssinatura {
+    border: 2px dashed #ced4da;
+    border-radius: 8px;
+    background: #fff;
+    cursor: crosshair;
+    touch-action: none; /* Evita rolar a tela no celular ao assinar */
+}
