@@ -3,171 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificados NR - Construtora Piacentini</title>
+    <title>Portal de Certificados NR</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-construtora shadow">
-    <div class="container-fluid px-3 px-md-5">
-        <span class="navbar-brand mb-0 h1 d-flex align-items-center">
-            <span style="color: var(--piacentini-orange); font-size: 1.5rem; margin-right: 10px;">🚧</span> 
-            PORTAL DE CERTIFICADOS
-        </span>
-    </div>
-</nav>
-
-<div class="container-fluid px-3 px-md-5 my-4">
+<div class="container py-4">
     
-    <!-- SEÇÃO 1: IMPORTAÇÃO E INCLUSÃO MANUAL -->
-    <div class="card mb-4">
-        <div class="card-header border-piacentini">1. Base de Colaboradores</div>
-        <div class="card-body">
-            <div class="d-grid gap-2 d-md-flex mb-4">
-                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/export?format=xlsx" target="_blank" class="btn btn-outline-construtora">📥 Baixar Template (.xlsx)</a>
-                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/copy" target="_blank" class="btn btn-outline-construtora">📄 Acessar Template (Drive)</a>
+    <div class="text-center mb-4">
+        <img id="logoEmpresa" src="COLE_O_LINK_DA_SUA_LOGO_AQUI.png" alt="Logo da Empresa" style="max-height: 80px; margin-bottom: 15px; display: none;">
+        <h2 class="fw-bold" style="color: var(--cor-secundaria);">🚧 PORTAL AUTOMÁTICO DE CERTIFICADOS NR</h2>
+    </div>
+
+    <div class="card-custom p-4">
+        <h5 class="fw-bold mb-3">1. BASE DE COLABORADORES (IMPORTAÇÃO)</h5>
+        
+        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-excel-tab" data-bs-toggle="pill" data-bs-target="#pills-excel" type="button" role="tab">📂 Importar Excel</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-sheets-tab" data-bs-toggle="pill" data-bs-target="#pills-sheets" type="button" role="tab">☁️ Importar Google Sheets</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-excel" role="tabpanel">
+                <label class="form-label">Selecione seus arquivos (.xlsx):</label>
+                <input type="file" id="fileInput" class="form-control mb-2" accept=".xlsx, .xls, .csv" multiple>
             </div>
-            
-            <ul class="nav nav-pills mb-3" id="inputTab" role="tablist">
-                <li class="nav-item" role="presentation"><button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-arquivo">📂 Importar Excel</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-sheets">☁️ Importar Google Sheets</button></li>
-                <li class="nav-item ms-md-auto" role="presentation"><button class="btn btn-success fw-bold" onclick="adicionarLinhaManual()">➕ Digitar Manualmente</button></li>
-            </ul>
-            
-            <div class="tab-content bg-light p-3 border rounded">
-                <div class="tab-pane fade show active" id="tab-arquivo">
-                    <label class="form-label fw-bold">Selecione seus arquivos (.xlsx):</label>
-                    <div class="d-flex flex-column flex-md-row gap-2">
-                        <input class="form-control form-control-lg" type="file" id="fileInput" accept=".xlsx, .xls" multiple>
-                        <button class="btn btn-construtora btn-lg px-4" onclick="importarArquivosExcel()">Importar Dados</button>
-                    </div>
-                </div>
-                <div class="tab-pane fade" id="tab-sheets">
-                    <label class="form-label fw-bold">Cole o link da Planilha Pública:</label>
-                    <div class="d-flex flex-column flex-md-row gap-2">
-                        <input type="text" id="sheetsLink" class="form-control form-control-lg" placeholder="https://docs.google.com/spreadsheets/...">
-                        <button class="btn btn-construtora btn-lg px-4" onclick="importarGoogleSheets()">Importar Dados</button>
-                    </div>
-                </div>
+            <div class="tab-pane fade" id="pills-sheets" role="tabpanel">
+                <label class="form-label">Cole o link da sua planilha (Google Sheets):</label>
+                <input type="text" id="linkSheets" class="form-control mb-2" placeholder="https://docs.google.com/spreadsheets/d/...">
+                <small class="text-danger">⚠️ A planilha precisa estar configurada como "Qualquer pessoa com o link".</small><br>
+                <button class="btn btn-primary mt-2" onclick="importarDoSheets()">📥 Puxar Dados</button>
             </div>
-            <div class="mt-3 text-md-end text-center">
-                <button class="btn btn-sm btn-danger px-3 py-2 fw-bold" onclick="limparLista()">🗑️ Limpar Lista Atual</button>
-            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="LINK_PLANILHA_SECRET" target="_blank" class="btn btn-outline-secondary btn-sm">📄 Acessar Template Padrão</a>
         </div>
     </div>
 
-    <!-- SEÇÃO 2: TABELA DE NRs (Com Divisórias) -->
-    <div class="card mb-4">
-        <div class="card-header border-piacentini">2. Cursos e Certificados a Emitir</div>
-        <div class="card-body p-0 p-md-3">
-            <div class="alert alert-secondary m-3 m-md-0 mb-md-3" role="alert">
-                💡 <strong>Como usar:</strong> Para gerar um certificado, ligue a chave (<span class="badge bg-success">Verde</span>) na coluna correspondente. As datas esbranquiçadas indicam que aquele certificado <strong>NÃO</strong> será gerado. <br>✍️ <em>Você também pode clicar nos nomes e CPFs da tabela abaixo para corrigi-los manualmente!</em>
+    <div class="card-custom p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <h5 class="fw-bold mb-0">2. CURSOS E CERTIFICADOS A EMITIR</h5>
+            <div class="mt-2 mt-md-0">
+                <button class="btn btn-success btn-sm" onclick="adicionarLinhaManual()">➕ Digitar Manualmente</button>
+                <button class="btn btn-warning btn-sm" onclick="excluirSelecionados()">🗑️ Excluir Selecionados</button>
+                <button class="btn btn-danger btn-sm" onclick="limparTabela()">🧹 Limpar Tudo</button>
             </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="text-nowrap text-center bg-light">
-                        <tr>
-                            <th class="text-start">Cód</th>
-                            <th class="col-dados text-start">Colaborador</th>
-                            <th class="col-dados text-start">CPF</th>
-                            <th class="text-start">Admissão</th>
-                            <th class="col-nr">🛠️ Gerar NR 06<br><small class="text-muted fw-normal">Data do Certificado</small></th>
-                            <th class="col-nr">⚙️ Gerar NR 12<br><small class="text-muted fw-normal">Data do Certificado</small></th>
-                            <th class="col-nr">🏗️ Gerar NR 18<br><small class="text-muted fw-normal">Data do Certificado</small></th>
-                            <th class="col-nr">🧗‍♂️ Gerar NR 35<br><small class="text-muted fw-normal">Data do Certificado</small></th>
-                        </tr>
-                    </thead>
-                    <tbody id="funcTableBody">
-                        <tr><td colspan="8" class="text-center text-muted py-5">Nenhum dado inserido.</td></tr>
+        </div>
+        
+        <div class="alert alert-info py-2" style="font-size: 0.9rem;">
+            💡 <strong>Dicas:</strong> 1. Você pode colar dados (Ctrl+V) de uma planilha clicando em qualquer lugar. <br>
+            2. Para gerar o certificado, ative a "chavinha" na coluna da NR. Use o checkbox no cabeçalho para ativar/desativar todos de uma vez.
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center" style="font-size: 0.9rem;">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="chkTodos" onclick="toggleSelecionarTodos(this)"></th>
+                        <th>Cód</th>
+                        <th>Colaborador</th>
+                        <th>CPF</th>
+                        <th>Admissão</th>
+                        <th>
+                            🛠️ NR 06<br>
+                            <input type="checkbox" onclick="toggleColunaNR('06', this.checked)"> Todos
+                        </th>
+                        <th>
+                            ⚙️ NR 12<br>
+                            <input type="checkbox" onclick="toggleColunaNR('12', this.checked)"> Todos
+                        </th>
+                        <th>
+                            🏗️ NR 18<br>
+                            <input type="checkbox" onclick="toggleColunaNR('18', this.checked)"> Todos
+                        </th>
+                        <th>
+                            🧗 NR 35<br>
+                            <input type="checkbox" onclick="toggleColunaNR('35', this.checked)"> Todos
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="funcTableBody">
                     </tbody>
-                </table>
-            </div>
+            </table>
         </div>
     </div>
 
-    <!-- SEÇÃO 3: TSTs (Com trava de UF e alinhamento) -->
-    <div class="card mb-4">
-        <div class="card-header border-piacentini">3. Habilitação de Instrutores (TST)</div>
-        <div class="card-body">
-            <p class="text-muted mb-3">Cadastre o profissional de segurança e indique quais normas ele assinará. <strong>Nota: Cada NR só pode ter 1 instrutor habilitado.</strong></p>
-            
-            <div class="row g-4 align-items-start bg-light p-3 border rounded mx-0 mt-1">
-                <div class="col-12 col-lg-3">
-                    <label class="fw-bold mb-1">Dados do Profissional:</label>
-                    <input type="text" id="tstNome" class="form-control fw-bold text-uppercase mb-2" placeholder="NOME COMPLETO">
-                    <input type="text" id="tstReg" class="form-control" placeholder="Registro (Ex: 12345/PR)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-\/]/g, '')">
+    <div class="card-custom p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">3. HABILITAÇÃO DE INSTRUTORES (TST)</h5>
+            <button class="btn btn-danger btn-sm" onclick="limparTSTs()">🧹 Apagar Todos os TSTs</button>
+        </div>
+        
+        <div class="row g-3 align-items-end mb-3 bg-light p-3 rounded border">
+            <div class="col-md-4">
+                <label class="form-label">Nome Completo</label>
+                <input type="text" id="tstNome" class="form-control text-uppercase" placeholder="Ex: JOÃO DA SILVA">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Nº Registro (Obrigatório /UF)</label>
+                <input type="text" id="tstReg" class="form-control text-uppercase" placeholder="Ex: 0000000/SP">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label d-block">Normas do Profissional:</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input tst-nr" type="checkbox" value="NR 06"> <label>06</label>
                 </div>
-                <div class="col-12 col-lg-4 text-center">
-                    <label class="fw-bold d-block mb-2">Normas Ministradas (Selecione):</label>
-                    <div class="btn-group w-100" role="group">
-                        <input type="checkbox" class="btn-check tst-nr" id="btncheck06" value="NR 06">
-                        <label class="btn btn-outline-secondary fw-bold" for="btncheck06">NR 06</label>
-
-                        <input type="checkbox" class="btn-check tst-nr" id="btncheck12" value="NR 12">
-                        <label class="btn btn-outline-secondary fw-bold" for="btncheck12">NR 12</label>
-
-                        <input type="checkbox" class="btn-check tst-nr" id="btncheck18" value="NR 18">
-                        <label class="btn btn-outline-secondary fw-bold" for="btncheck18">NR 18</label>
-
-                        <input type="checkbox" class="btn-check tst-nr" id="btncheck35" value="NR 35">
-                        <label class="btn btn-outline-secondary fw-bold" for="btncheck35">NR 35</label>
-                    </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input tst-nr" type="checkbox" value="NR 12"> <label>12</label>
                 </div>
-                <div class="col-12 col-lg-3 text-center">
-                    <label class="fw-bold mb-1 text-primary">✍️ Assinatura (Opcional):</label><br>
-                    <div class="signature-container mx-auto">
-                        <canvas id="canvasAssinatura" width="220" height="70" title="Desenhe sua assinatura aqui"></canvas>
-                        <button class="btn btn-sm btn-link text-danger w-100 text-decoration-none p-0 mt-1" onclick="limparCanvas()">Limpar Desenho</button>
-                    </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input tst-nr" type="checkbox" value="NR 18"> <label>18</label>
                 </div>
-                <div class="col-12 col-lg-2 d-flex align-items-center">
-                    <button class="btn btn-construtora w-100 py-3 fs-5 mt-lg-4" onclick="adicionarTST()">➕ Incluir</button>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input tst-nr" type="checkbox" value="NR 35"> <label>35</label>
                 </div>
             </div>
-            <div id="tstList" class="mt-4 d-flex flex-wrap gap-2"></div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" onclick="adicionarTST()">Incluir TST</button>
+            </div>
         </div>
-    </div>
 
-    <!-- SEÇÃO 4: GERAÇÃO -->
-    <div class="card mb-5 border-0 shadow-lg bg-construtora">
-        <div class="card-body p-4 p-md-5">
-            <h3 class="mb-4 text-center" style="color: var(--piacentini-orange);">4. Finalizar e Gerar</h3>
-            <div class="row g-4 align-items-end">
-                <div class="col-12 col-md-7">
-                    <label class="fw-bold mb-2 text-white">E-mails para recebimento (separados por vírgula):</label>
-                    <input type="text" id="emailsDestino" class="form-control form-control-lg" placeholder="engenharia@empresa.com, rh@empresa.com">
-                </div>
-                <div class="col-12 col-md-5 text-center text-md-end">
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <button class="btn btn-light btn-lg px-4 fw-bold shadow-sm" onclick="gerarCertificados('ZIP')" id="btnZip">📦 Baixar .ZIP</button>
-                        <button class="btn btn-construtora btn-lg px-5 shadow-sm" onclick="gerarCertificados('EMAIL')" id="btnEmail">✉️ Enviar E-mails</button>
-                    </div>
+        <div class="mb-3">
+            <button class="btn btn-outline-secondary btn-sm mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAssinatura">
+                ✍️ Adicionar Assinatura Digital (Opcional)
+            </button>
+            <div class="collapse" id="collapseAssinatura">
+                <div class="p-3 border rounded bg-light text-center">
+                    <p class="text-muted small mb-1">Desenhe sua assinatura no quadro abaixo:</p>
+                    <canvas id="canvasAssinatura" width="400" height="150"></canvas><br>
+                    <button class="btn btn-sm btn-outline-danger mt-2" onclick="limparAssinatura()">Limpar Quadro</button>
                 </div>
             </div>
-            <div id="statusProcessamento" class="mt-4 fs-5 fw-bold text-center text-white"></div>
         </div>
+
+        <div id="tstList" class="mt-3"></div>
     </div>
+
+    <div class="card-custom p-4">
+        <h5 class="fw-bold mb-3">4. FINALIZAR E GERAR</h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">E-mails (Separados por vírgula):</label>
+                <input type="text" id="emailsDestino" class="form-control" placeholder="rh@empresa.com, eng@empresa.com">
+            </div>
+            <div class="col-md-3 d-grid align-items-end">
+                <button id="btnZip" class="btn btn-dark" onclick="gerarCertificados('ZIP')">📥 Baixar Tudo (.ZIP)</button>
+            </div>
+            <div class="col-md-3 d-grid align-items-end">
+                <button id="btnEmail" class="btn btn-primary" style="background-color: var(--cor-primaria); border: none;" onclick="gerarCertificados('EMAIL')">📧 Enviar por E-mail</button>
+            </div>
+        </div>
+        <div id="statusProcessamento" class="mt-3"></div>
+    </div>
+
+    <div id="creditos-dev" class="footer-creditos">
+        Desenvolvido por:<br>
+        <strong>Eng. Daniel Filipe Rosa (DDFR LTDA)</strong> e <strong>TST Caroline Ávila (C.A Segurança do Trabalho LTDA)</strong><br>
+        🔗 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a> | 
+        ✉️ <a href="mailto:danielf.r@hotmail.com?subject=Dúvida%20-%20Portal%20de%20Certificados&body=Olá%20Daniel,%20preciso%20de%20ajuda%20com%20o%20sistema.%20O%20problema%20é:">Email: danielf.r@hotmail.com</a>
+    </div>
+
 </div>
 
-<script>const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec";</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="app.js"></script>
-
-<!-- CRÉDITOS OFICIAIS -->
-<footer id="creditos-dev" class="py-4 text-center" style="background-color: var(--piacentini-dark-gray);">
-    <div class="container text-light">
-        <p class="mb-2" style="font-size: 1rem; color: var(--piacentini-orange);">🚧 <strong>Portal Automático de Certificados NR</strong></p>
-        <p class="mb-1" style="font-size: 0.9rem; color: #ddd;">
-            Desenvolvido por:<br>
-            <strong>Eng. Daniel Filipe Rosa (DDFR LTDA)</strong> e <strong>TST Caroline Ávila (C.A Segurança do Trabalho LTDA)</strong>
-        </p>
-        <div class="mt-2" style="font-size: 0.85rem;">
-            <a href="https://instagram.com/eng.daniel.filipe" target="_blank" class="text-decoration-none me-3" style="color: #fff;">🔗 @eng.daniel.filipe</a>
-            <span style="color: #bbb;">Email: danielf.r@hotmail.com</span>
-        </div>
-    </div>
-</footer>
 </body>
 </html>
