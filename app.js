@@ -161,6 +161,19 @@ function atualizarListaTST() {
 // 6. ENVIO PARA O BACKEND (API)
 // ==========================================
 async function gerarCertificados(destino) {
+// ==========================================
+// SISTEMA ANTI-FRAUDE DE CRÉDITOS
+// ==========================================
+const footer = document.getElementById('creditos-dev');
+if (!footer || !footer.innerHTML.includes('Daniel Filipe Rosa') || !footer.innerHTML.includes('Caroline Ávila')) {
+    document.body.innerHTML = `
+        <div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#f8d7da; color:#721c24; flex-direction:column; text-align:center; font-family:sans-serif;">
+            <h1 style="font-size: 50px;">⚠️ ACESSO BLOQUEADO</h1>
+            <h3>Violação de Direitos Autorais.</h3>
+            <p>Os créditos dos desenvolvedores originais foram removidos ou alterados.<br>O sistema não funcionará até que a autoria seja restaurada.</p>
+        </div>`;
+    return; // Para a execução do código na hora
+}
     if (listaFuncionarios.length === 0) return alert("Importe os funcionários primeiro.");
     if (API_URL.includes("SECRET")) return alert("Aviso: Configuração do Servidor incompleta (Erro de Secret).");
 
