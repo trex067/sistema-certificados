@@ -6,103 +6,37 @@
     --piacentini-light-gray: #f4f4f4;
 }
 
-body {
-    background-color: var(--piacentini-light-gray);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+body { background-color: var(--piacentini-light-gray); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-/* Navbar */
-.bg-construtora {
-    background-color: var(--piacentini-black) !important;
-    border-bottom: 4px solid var(--piacentini-orange);
-}
-.navbar-brand {
-    font-weight: 800;
-    letter-spacing: 1px;
-}
+/* Global Custom */
+.bg-construtora { background-color: var(--piacentini-black) !important; border-bottom: 4px solid var(--piacentini-orange); }
+.border-piacentini { border-bottom: 3px solid var(--piacentini-orange) !important; }
+.text-piacentini { color: var(--piacentini-orange) !important; }
 
 /* Cards */
-.card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-    overflow: hidden;
-}
-.card-header {
-    background-color: var(--piacentini-dark-gray) !important;
-    color: #ffffff !important;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 15px 20px;
-    border-bottom: 3px solid var(--piacentini-orange);
-}
+.card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; overflow: hidden; }
+.card-header { background-color: var(--piacentini-dark-gray) !important; color: #ffffff !important; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 15px 20px; }
 
 /* Botões Customizados */
-.btn-construtora {
-    background-color: var(--piacentini-orange);
-    color: #000;
-    font-weight: 800;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-}
-.btn-construtora:hover {
-    background-color: var(--piacentini-orange-hover);
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(255, 140, 0, 0.4);
-}
+.btn-construtora { background-color: var(--piacentini-orange) !important; color: #000 !important; font-weight: 800; border: none; border-radius: 6px; transition: all 0.3s ease; }
+.btn-construtora:hover { background-color: var(--piacentini-orange-hover) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(255, 140, 0, 0.4); }
+.btn-outline-construtora { border: 2px solid var(--piacentini-dark-gray) !important; color: var(--piacentini-dark-gray) !important; font-weight: 600; }
+.btn-outline-construtora:hover { background-color: var(--piacentini-dark-gray) !important; color: var(--piacentini-orange) !important; }
 
-.btn-outline-construtora {
-    border: 2px solid var(--piacentini-dark-gray);
-    color: var(--piacentini-dark-gray);
-    font-weight: 600;
-}
-.btn-outline-construtora:hover {
-    background-color: var(--piacentini-dark-gray);
-    color: var(--piacentini-orange);
-}
-
-/* Tabela Responsiva */
-.table-responsive {
-    border-radius: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--piacentini-orange) #ddd;
-}
-.table-responsive::-webkit-scrollbar { height: 10px; }
-.table-responsive::-webkit-scrollbar-track { background: #ddd; border-radius: 8px;}
-.table-responsive::-webkit-scrollbar-thumb { background-color: var(--piacentini-orange); border-radius: 8px; }
-
-.table th {
-    background-color: var(--piacentini-light-gray);
-    color: var(--piacentini-dark-gray);
-    vertical-align: middle;
-}
+/* Tabela e Swicthes Visuais */
+.table-responsive { border-radius: 8px; scrollbar-width: thin; scrollbar-color: var(--piacentini-orange) #ddd; }
+.table th { background-color: #e9ecef; color: var(--piacentini-dark-gray); vertical-align: middle; }
 .text-nowrap { white-space: nowrap !important; }
-.col-min-width { min-width: 150px; }
+.col-min-width { min-width: 170px; }
 
-/* Inputs e Checkboxes */
-.form-control, .form-select {
-    padding: 10px 15px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}
-.form-control:focus {
-    border-color: var(--piacentini-orange);
-    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
-}
-.form-check-input:checked {
-    background-color: var(--piacentini-orange);
-    border-color: var(--piacentini-orange);
-}
+/* Customização dos botões das NRs (btn-check) */
+.btn-outline-secondary { border-color: #ccc; color: #555; }
+.btn-check:checked + .btn-outline-secondary { background-color: var(--piacentini-dark-gray); color: var(--piacentini-orange); border-color: var(--piacentini-dark-gray); }
 
-/* Badges (TST) */
-.badge.bg-secondary {
-    background-color: var(--piacentini-dark-gray) !important;
-    border: 1px solid var(--piacentini-orange);
-    color: #fff;
-    padding: 10px 15px !important;
-    border-radius: 8px;
-}
+/* Switch da Tabela (Fica verde quando ativo) */
+.form-switch .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
+.form-switch .form-check-input:checked { background-color: #198754; border-color: #198754; }
+
+/* Assinatura Box */
+.signature-container { border: 2px dashed #bbb; background-color: #fff; border-radius: 8px; width: fit-content; }
+canvas { touch-action: none; cursor: crosshair; }
