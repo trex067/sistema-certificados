@@ -1,88 +1,114 @@
 /* =========================================
-   IDENTIDADE VISUAL DA CONSTRUTORA
+   IDENTIDADE VISUAL E VARIÁVEIS DE TEMA
    ========================================= */
 :root {
-    --cor-primaria: #ff6600; /* Laranja */
-    --cor-secundaria: #343a40; /* Chumbo Escuro */
+    --cor-primaria: #ff6600; /* Laranja Piacentini */
+    --cor-secundaria: #343a40; /* Chumbo */
     --cor-fundo: #f8f9fa;
     --cor-texto: #212529;
+    --cor-card: #ffffff;
+    --cor-borda: #dee2e6;
+    --cor-input-bg: #ffffff;
+    --cor-input-text: #212529;
+}
+
+[data-theme="dark"] {
+    --cor-primaria: #ff8533; /* Laranja mais suave para telas escuras */
+    --cor-secundaria: #f8f9fa;
+    --cor-fundo: #121212;
+    --cor-texto: #e0e0e0;
+    --cor-card: #1e1e1e;
+    --cor-borda: #333333;
+    --cor-input-bg: #2d2d2d;
+    --cor-input-text: #e0e0e0;
 }
 
 body {
     background-color: var(--cor-fundo);
     color: var(--cor-texto);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: background-color 0.3s, color 0.3s;
 }
+
+/* Modo Escuro - Elementos Globais */
+.text-muted { color: #a0a0a0 !important; }
+h2, h5 { color: var(--cor-secundaria) !important; }
+
+/* Botão de Trocar Tema */
+.theme-toggle {
+    cursor: pointer;
+    font-size: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--cor-secundaria);
+    transition: transform 0.2s;
+}
+.theme-toggle:hover { transform: scale(1.1); }
 
 /* Painéis e Cards */
 .card-custom {
-    background: #ffffff;
+    background-color: var(--cor-card);
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     border-top: 4px solid var(--cor-primaria);
     margin-bottom: 2rem;
+    transition: background-color 0.3s;
 }
 
-/* Divisórias da Tabela (O que você desenhou na imagem) */
+/* Inputs e Formulários */
+.form-control, .form-select {
+    background-color: var(--cor-input-bg);
+    color: var(--cor-input-text);
+    border-color: var(--cor-borda);
+}
+.form-control:focus {
+    background-color: var(--cor-input-bg);
+    color: var(--cor-input-text);
+    border-color: var(--cor-primaria);
+    box-shadow: 0 0 0 0.25rem rgba(255, 102, 0, 0.25);
+}
+
+/* Divisórias da Tabela e Cores */
+.table { color: var(--cor-texto); }
 .table-bordered th, .table-bordered td {
-    border-left: 1px solid #dee2e6;
-    border-right: 1px solid #dee2e6;
+    border-color: var(--cor-borda) !important;
     vertical-align: middle;
+}
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 102, 0, 0.05) !important;
 }
 
 /* Correção dos textos cortados nas células */
 .col-codigo { min-width: 90px; font-weight: bold;}
-.col-nome { min-width: 250px; white-space: normal; } /* Permite quebrar linha se for muito grande, sem cortar */
+.col-nome { min-width: 250px; white-space: normal; } 
 .col-cpf { min-width: 140px; }
 .col-data { min-width: 120px; }
 
 /* Efeito Esbranquiçado nas NRs Desativadas */
-.nr-desativada {
-    opacity: 0.4;
-    transition: opacity 0.3s ease;
-}
-.nr-ativada {
-    opacity: 1;
-    font-weight: bold;
-    color: var(--cor-primaria);
-    transition: opacity 0.3s ease;
-}
+.nr-desativada { opacity: 0.3; transition: opacity 0.3s ease; }
+.nr-ativada { opacity: 1; font-weight: bold; color: var(--cor-primaria); transition: opacity 0.3s ease; }
 
 /* Switches (Botões de Ligar NR) */
-.form-switch .form-check-input {
-    width: 2.5em;
-    height: 1.25em;
-    cursor: pointer;
-}
-.form-switch .form-check-input:checked {
-    background-color: var(--cor-primaria);
-    border-color: var(--cor-primaria);
-}
+.form-switch .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
+.form-switch .form-check-input:checked { background-color: var(--cor-primaria); border-color: var(--cor-primaria); }
 
 /* Rodapé e Créditos */
 .footer-creditos {
-    background-color: var(--cor-secundaria);
+    background-color: #343a40; /* Mantém escuro em ambos os temas */
     color: #ffffff;
     padding: 20px;
     border-radius: 8px;
     font-size: 0.9rem;
     text-align: center;
 }
-.footer-creditos a {
-    color: var(--cor-primaria);
-    text-decoration: none;
-    font-weight: bold;
-}
-.footer-creditos a:hover {
-    color: #ff8533;
-    text-decoration: underline;
-}
+.footer-creditos a { color: var(--cor-primaria); text-decoration: none; font-weight: bold; }
+.footer-creditos a:hover { color: #ff8533; text-decoration: underline; }
 
 /* Canvas de Assinatura */
 #canvasAssinatura {
-    border: 2px dashed #ced4da;
+    border: 2px dashed var(--cor-borda);
     border-radius: 8px;
     background: #fff;
     cursor: crosshair;
-    touch-action: none; /* Evita rolar a tela no celular ao assinar */
+    touch-action: none;
 }
