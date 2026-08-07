@@ -20,14 +20,20 @@
 
 <div class="container my-4">
     <!-- SEÇÃO 1: DADOS -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
-        <div class="card-body">
-            <div class="d-flex justify-content-between mb-3">
-                <a href="COLOQUE_AQUI_O_LINK_DO_SEU_TEMPLATE_DO_DRIVE" target="_blank" class="btn btn-outline-secondary btn-sm">📄 Baixar/Acessar Template Padrão</a>
-            </div>
-            
-            <ul class="nav nav-tabs" id="inputTab" role="tablist">
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
+    <div class="card-body">
+        
+        <div class="d-flex mb-3">
+            <a href="__LINK_EXCEL_SECRET__" target="_blank" class="btn btn-outline-success btn-sm me-2">
+                📥 Baixar Template (.xlsx)
+            </a>
+            <a href="__LINK_PLANILHA_SECRET__" target="_blank" class="btn btn-outline-primary btn-sm">
+                📄 Acessar Template (Google Sheets)
+            </a>
+        </div>
+        
+        <ul class="nav nav-tabs" id="inputTab" role="tablist">
                 <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-arquivo">Importar Excel</button></li>
                 <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-colar">Colar Dados</button></li>
             </ul>
@@ -104,7 +110,7 @@
 
 <script>
     // A mágica do GitHub Actions vai substituir a string abaixo pela URL real antes de publicar!
-    const API_URL = ""; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec"; 
 </script>
 <script src="app.js"></script>
 </body>
