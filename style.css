@@ -1,26 +1,108 @@
-/* Variáveis de cores da construtora - Altere conforme a marca */
 :root {
-    --cor-primaria: #0A3A66; /* Azul escuro corporativo */
-    --cor-secundaria: #F29F05; /* Amarelo/Laranja Construtora */
+    --piacentini-black: #0d0d0d;
+    --piacentini-dark-gray: #2b2b2b;
+    --piacentini-orange: #FF8C00;
+    --piacentini-orange-hover: #e67e00;
+    --piacentini-light-gray: #f4f4f4;
 }
 
+body {
+    background-color: var(--piacentini-light-gray);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar */
 .bg-construtora {
-    background-color: var(--cor-primaria) !important;
+    background-color: var(--piacentini-black) !important;
+    border-bottom: 4px solid var(--piacentini-orange);
 }
-.text-construtora {
-    color: var(--cor-primaria) !important;
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: 1px;
 }
-.btn-construtora {
-    background-color: var(--cor-secundaria);
-    color: #fff;
-    font-weight: bold;
+
+/* Cards */
+.card {
     border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    overflow: hidden;
+}
+.card-header {
+    background-color: var(--piacentini-dark-gray) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 15px 20px;
+    border-bottom: 3px solid var(--piacentini-orange);
+}
+
+/* Botões Customizados */
+.btn-construtora {
+    background-color: var(--piacentini-orange);
+    color: #000;
+    font-weight: 800;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
 }
 .btn-construtora:hover {
-    background-color: #d18a04;
+    background-color: var(--piacentini-orange-hover);
     color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 140, 0, 0.4);
+}
+
+.btn-outline-construtora {
+    border: 2px solid var(--piacentini-dark-gray);
+    color: var(--piacentini-dark-gray);
+    font-weight: 600;
+}
+.btn-outline-construtora:hover {
+    background-color: var(--piacentini-dark-gray);
+    color: var(--piacentini-orange);
+}
+
+/* Tabela Responsiva */
+.table-responsive {
+    border-radius: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--piacentini-orange) #ddd;
+}
+.table-responsive::-webkit-scrollbar { height: 10px; }
+.table-responsive::-webkit-scrollbar-track { background: #ddd; border-radius: 8px;}
+.table-responsive::-webkit-scrollbar-thumb { background-color: var(--piacentini-orange); border-radius: 8px; }
+
+.table th {
+    background-color: var(--piacentini-light-gray);
+    color: var(--piacentini-dark-gray);
+    vertical-align: middle;
+}
+.text-nowrap { white-space: nowrap !important; }
+.col-min-width { min-width: 150px; }
+
+/* Inputs e Checkboxes */
+.form-control, .form-select {
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+.form-control:focus {
+    border-color: var(--piacentini-orange);
+    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
 }
 .form-check-input:checked {
-    background-color: var(--cor-primaria);
-    border-color: var(--cor-primaria);
+    background-color: var(--piacentini-orange);
+    border-color: var(--piacentini-orange);
+}
+
+/* Badges (TST) */
+.badge.bg-secondary {
+    background-color: var(--piacentini-dark-gray) !important;
+    border: 1px solid var(--piacentini-orange);
+    color: #fff;
+    padding: 10px 15px !important;
+    border-radius: 8px;
 }
