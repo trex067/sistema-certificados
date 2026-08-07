@@ -16,6 +16,8 @@ jobs:
       - name: Injetar URL Segura no Código
         run: |
           sed -i 's|__API_URL_SECRET__|${{ secrets.API_GAS_URL }}|g' index.html
+          sed -i 's|__LINK_EXCEL_SECRET__|${{ secrets.LINK_EXCEL }}|g' index.html
+          sed -i 's|__LINK_PLANILHA_SECRET__|${{ secrets.LINK_PLANILHA }}|g' index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
