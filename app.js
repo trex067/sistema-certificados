@@ -10,34 +10,54 @@ const themeToggleBtn = document.getElementById('themeToggle');
 const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 document.documentElement.setAttribute('data-theme', currentTheme);
 
+function atualizarIconeTema(theme) {
+    themeToggleBtn.innerHTML = theme === 'dark' ? '☀️ Claro' : '🌙 Escuro';
+}
+atualizarIconeTema(currentTheme);
+
 themeToggleBtn.addEventListener('click', () => {
     let theme = document.documentElement.getAttribute('data-theme');
     theme = theme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
+    atualizarIconeTema(theme);
 });
 
 // ==========================================
-// 1. LEITURA DE EXCEL, SHEETS E CTRL+V
+// 1. IMPORTAÇÃO VIA EXCEL (BOTÃO EXPLÍCITO)
 // ==========================================
-
-// Via Arquivo Excel
+let filesTemporarios = null;
 document.getElementById('fileInput').addEventListener('change', function(e) {
-    const files = e.target.files;
-    for (let f = 0; f < files.length; f++) {
+    filesTemporarios = e.target.files;
+});
+
+function processarExcelVisual() {
+    if (!filesTemporarios || filesTemporarios.length === 0) {
+        return alert("⚠️ Por favor, selecione um ou mais arquivos Excel primeiro.");
+    }
+    
+    let processados = 0;
+    for (let f = 0; f < filesTemporarios.length; f++) {
         const reader = new FileReader();
         reader.onload = function(evt) {
             const data = new Uint8Array(evt.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
-            processarArrayMatriz(json);
+            processarArrayMatriz(json); // Usa o leitor de matriz clássico
         };
-        reader.readAsArrayBuffer(files[f]);
+        reader.readAsArrayBuffer(filesTemporarios[f]);
+        processados++;
     }
-});
+    
+    document.getElementById('fileInput').value = "";
+    filesTemporarios = null;
+    if(processados > 0) alert("✅ Arquivos Excel enviados para processamento!");
+}
 
-// Via Link do Google Sheets
+// ==========================================
+// 2. IMPORTAÇÃO VIA GOOGLE SHEETS
+// ==========================================
 async function importarDoSheets() {
     const link = document.getElementById('linkSheets').value.trim();
     if (!link) return alert("Por favor, cole o link da planilha.");
@@ -58,28 +78,85 @@ async function importarDoSheets() {
         
         processarArrayMatriz(linhas);
         document.getElementById('linkSheets').value = "";
-        alert("Dados puxados com sucesso!");
+        alert("✅ Dados puxados da nuvem com sucesso!");
     } catch (e) {
         document.getElementById('linkSheets').value = "";
-        alert("Erro ao importar: " + e.message);
+        alert("❌ Erro ao importar: " + e.message);
     }
 }
 
-// Via CTRL+V (Paste) - Global e Restaurado
+// ==========================================
+// 3. O CAÇADOR: CTRL+V MÁGICO (DADOS BAGUNÇADOS)
+// ==========================================
 document.addEventListener('paste', (e) => {
-    // A TRAVA: Ignora o Ctrl+V global se a pessoa estiver digitando manualmente dentro da tabela ou em outro input
+    // Trava para não roubar o Ctrl+V se a pessoa estiver digitando dentro da tabela ou input
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
     let clipboardData = e.clipboardData || window.clipboardData;
     let pastedData = clipboardData.getData('Text');
     if (!pastedData) return;
 
-    // O Excel separa colunas por TAB (\t) e linhas por quebra de linha (\n)
-    const linhas = pastedData.split('\n').map(linha => linha.split('\t'));
-    processarArrayMatriz(linhas);
+    processarTextoBaguncado(pastedData);
 });
 
-// O Motor de Processamento
+function processarTextoBaguncado(texto) {
+    let linhas = texto.split('\n');
+    let adicionados = 0;
+    let duplicados = 0;
+
+    linhas.forEach(linha => {
+        let textoLinha = linha.trim();
+        if (!textoLinha) return;
+
+        // Expressão Regular para achar qualquer coisa que pareça um CPF (com ou sem ponto)
+        let regexCpf = /(?:\d{3}[\.\s-]?){3}\d{2}|\d{11}/;
+        let matchCpf = textoLinha.match(regexCpf);
+
+        if (matchCpf) {
+            let cpfBruto = matchCpf[0];
+            let cpfValidado = formatarEValidarCPF(cpfBruto);
+
+            if (cpfValidado.valido) {
+                // Caçador de Nomes: Tira o CPF, tira números soltos, tira datas e limpa a sujeira
+                let nomeSujo = textoLinha.replace(matchCpf[0], '') // Tira o CPF
+                                         .replace(/\d{2}\/\d{2}\/\d{4}/g, '') // Tira datas
+                                         .replace(/[0-9]/g, '') // Tira códigos avulsos
+                                         .replace(/[\t;-]/g, ' ') // Troca tabulações por espaço
+                                         .trim();
+                
+                // Filtra para pegar apenas palavras reais
+                let nomeLimpo = nomeSujo.split(' ').filter(p => p.length > 2).join(' ').toUpperCase();
+                if (!nomeLimpo) nomeLimpo = "NOME NÃO ENCONTRADO";
+
+                // Caçador de Data: Tenta achar uma data de admissão perdida na linha
+                let matchData = textoLinha.match(/\d{2}\/\d{2}\/\d{4}/);
+                let dataAdm = matchData ? converterData(matchData[0]) : new Date();
+
+                // Checa se já existe na tabela
+                let duplicado = listaFuncionarios.find(f => f.cpf === cpfValidado.cpfFormatado);
+                if (duplicado) {
+                    duplicados++;
+                } else {
+                    listaFuncionarios.push({
+                        id: Date.now() + Math.floor(Math.random() * 1000), // ID único
+                        codigo: "",
+                        nome: nomeLimpo,
+                        cpf: cpfValidado.cpfFormatado,
+                        admissao: dataAdm
+                    });
+                    adicionados++;
+                }
+            }
+        }
+    });
+
+    if (adicionados > 0 || duplicados > 0) {
+        alert(`✨ MÁGICA CONCLUÍDA!\n\n✅ ${adicionados} Novos funcionários inseridos.\n⚠️ ${duplicados} CPFs duplicados foram ignorados.`);
+        renderizarTabela();
+    }
+}
+
+// Matriz clássica (Para Excel e Sheets)
 function processarArrayMatriz(matriz) {
     let adicionados = 0;
     let duplicados = 0;
@@ -104,7 +181,7 @@ function processarArrayMatriz(matriz) {
         let dataAdm = converterData(linha[3]);
         
         listaFuncionarios.push({
-            id: Date.now() + i, 
+            id: Date.now() + Math.floor(Math.random() * 1000), 
             codigo: cod,
             nome: nome,
             cpf: cpfValidado.cpfFormatado,
@@ -113,28 +190,21 @@ function processarArrayMatriz(matriz) {
         adicionados++;
     }
     
-    if (duplicados > 0) alert(`${duplicados} funcionário(s) ignorado(s) pois já estavam na lista.`);
+    if (duplicados > 0) alert(`⚠️ ${duplicados} funcionário(s) ignorado(s) pois já estavam na lista.`);
     renderizarTabela();
 }
 
 // ==========================================
-// 2. FUNÇÕES DA TABELA (Adicionar, Excluir, Selecionar)
+// 4. FUNÇÕES DA TABELA (Restante do Código)
 // ==========================================
 function adicionarLinhaManual() {
-    listaFuncionarios.push({
-        id: Date.now(),
-        codigo: "",
-        nome: "",
-        cpf: "",
-        admissao: new Date()
-    });
+    listaFuncionarios.push({ id: Date.now(), codigo: "", nome: "", cpf: "", admissao: new Date() });
     renderizarTabela();
 }
 
 function excluirSelecionados() {
     const checkboxes = document.querySelectorAll('.chk-row:checked');
     const idsParaExcluir = Array.from(checkboxes).map(cb => parseInt(cb.value));
-    
     listaFuncionarios = listaFuncionarios.filter(f => !idsParaExcluir.includes(f.id));
     document.getElementById('chkTodos').checked = false;
     renderizarTabela();
@@ -163,9 +233,6 @@ function atualizarDadoManual(id, campo, valor) {
     }
 }
 
-// ==========================================
-// 3. TOGGLE DE NRS E RENDERIZAÇÃO
-// ==========================================
 function formataDataInput(data) {
     if (!(data instanceof Date) || isNaN(data)) return "";
     return data.toISOString().split('T')[0];
@@ -221,7 +288,7 @@ function renderizarTabela() {
 }
 
 // ==========================================
-// 4. GESTÃO DE TST E CANVAS
+// 5. GESTÃO DE TST E CANVAS
 // ==========================================
 function adicionarTST() {
     const nome = document.getElementById('tstNome').value.trim().toUpperCase();
@@ -267,7 +334,7 @@ function renderizarTSTs() {
     `).join('');
 }
 
-// Canvas
+// Canvas (Com compatibilidade para Touch)
 const canvas = document.getElementById('canvasAssinatura');
 const ctx = canvas.getContext('2d');
 let desenhando = false;
@@ -279,10 +346,9 @@ function desenhar(e) {
     if (!desenhando) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches && e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches && e.touches[0].clientY) - rect.top;
+    const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+    const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
     
-    // Cor da caneta dependendo do tema escuro/claro
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     ctx.strokeStyle = isDark ? '#ffffff' : '#000000';
     
@@ -305,7 +371,7 @@ function limparAssinatura() {
 }
 
 // ==========================================
-// 5. VALIDAÇÕES (CPF/DATA) E ENVIO (API)
+// 6. VALIDAÇÕES E API
 // ==========================================
 function formatarEValidarCPF(valor) {
     if (!valor) return { valido: false };
@@ -336,8 +402,7 @@ async function gerarCertificados(destino) {
 
     if (listaFuncionarios.length === 0) return alert("Importe ou adicione funcionários na tabela.");
     
-    // NOTA: Se você não configurou o API_GAS_URL no GitHub Secrets e tentar rodar isso na sua máquina, vai dar erro "API_URL is not defined" ou "Failed to fetch".
-    if (typeof API_URL === 'undefined') {
+    if (typeof API_URL === 'undefined' || API_URL.includes("SECRET")) {
         return alert("O site não está conectado ao servidor do Google. Você precisa subir os arquivos para o GitHub para que o sistema injete a chave de acesso (API_GAS_URL).");
     }
 
