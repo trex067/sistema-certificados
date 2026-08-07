@@ -1,5 +1,6 @@
 let listaFuncionarios = [];
 let listaTSTs = [];
+let assinaturaPreenchida = false; // Rastreador da assinatura
 
 // ==========================================
 // MÓDULO DE ASSINATURA DIGITAL (CANVAS)
@@ -8,256 +9,195 @@ const canvas = document.getElementById('canvasAssinatura');
 const ctx = canvas ? canvas.getContext('2d') : null;
 let desenhando = false;
 
-if (canvas) {
-    if(ctx) { ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000000'; }
+if (canvas && ctx) {
+    ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#000000';
 
-    canvas.addEventListener('mousedown', (e) => { desenhando = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
-    canvas.addEventListener('mousemove', (e) => { if (desenhando) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
-    canvas.addEventListener('mouseup', () => desenhando = false);
-    canvas.addEventListener('mouseout', () => desenhando = false);
+    const iniciarTraco = (x, y) => { desenhando = true; assinaturaPreenchida = true; ctx.beginPath(); ctx.moveTo(x, y); };
+    const fazerTraco = (x, y) => { if (desenhando) { ctx.lineTo(x, y); ctx.stroke(); } };
+    const pararTraco = () => { desenhando = false; };
+
+    // Mouse
+    canvas.addEventListener('mousedown', (e) => iniciarTraco(e.offsetX, e.offsetY));
+    canvas.addEventListener('mousemove', (e) => fazerTraco(e.offsetX, e.offsetY));
+    canvas.addEventListener('mouseup', pararTraco);
+    canvas.addEventListener('mouseout', pararTraco);
     
-    // Tratamento responsivo para Touch (Mobile)
+    // Touch (Mobile responsivo)
     canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault(); desenhando = true;
-        const rect = canvas.getBoundingClientRect();
-        // Corrige o scale caso a tela seja redimensionada
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        ctx.beginPath(); 
-        ctx.moveTo((e.touches[0].clientX - rect.left) * scaleX, (e.touches[0].clientY - rect.top) * scaleY);
+        e.preventDefault(); const rect = canvas.getBoundingClientRect();
+        iniciarTraco((e.touches[0].clientX - rect.left) * (canvas.width / rect.width), (e.touches[0].clientY - rect.top) * (canvas.height / rect.height));
     }, {passive: false});
-    
     canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (desenhando) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            ctx.lineTo((e.touches[0].clientX - rect.left) * scaleX, (e.touches[0].clientY - rect.top) * scaleY);
-            ctx.stroke();
-        }
+        e.preventDefault(); const rect = canvas.getBoundingClientRect();
+        fazerTraco((e.touches[0].clientX - rect.left) * (canvas.width / rect.width), (e.touches[0].clientY - rect.top) * (canvas.height / rect.height));
     }, {passive: false});
-    canvas.addEventListener('touchend', () => desenhando = false);
+    canvas.addEventListener('touchend', pararTraco);
 }
 
-function toggleAssinatura() { document.getElementById('boxAssinatura').style.display = document.getElementById('chkAssinatura').checked ? 'block' : 'none'; }
-function limparCanvas() { if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
+function limparCanvas() { if(ctx) { ctx.clearRect(0, 0, canvas.width, canvas.height); assinaturaPreenchida = false; } }
 
 // ==========================================
-// 1. IMPORTAÇÃO DE DADOS
+// IMPORTAÇÃO DE DADOS (Restante igual, apenas resumido)
 // ==========================================
 async function importarArquivosExcel() {
     const input = document.getElementById('fileInput');
-    if (input.files.length === 0) return alert("Selecione pelo menos um arquivo Excel.");
-    let totalAdicionados = 0, totalDuplicados = 0, totalIgnorados = 0;
+    if (input.files.length === 0) return alert("Selecione um arquivo Excel.");
+    let adc = 0, dup = 0, ign = 0;
     for (let i = 0; i < input.files.length; i++) {
-        await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
-                const res = processarDados(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1}), false);
-                totalAdicionados += res.adicionados; totalDuplicados += res.duplicados; totalIgnorados += res.ignorados; resolve();
+        await new Promise((res) => {
+            const r = new FileReader();
+            r.onload = function(e) {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const rData = processarDados(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1}), false);
+                adc += rData.adicionados; dup += rData.duplicados; ign += rData.ignorados; res();
             };
-            reader.readAsArrayBuffer(input.files[i]);
+            r.readAsArrayBuffer(input.files[i]);
         });
     }
-    input.value = '';
-    alert(`Leitura concluída!\n✅ ${totalAdicionados} adicionados\n🔁 ${totalDuplicados} duplicados\n⚠️ ${totalIgnorados} inválidos`);
+    input.value = ''; renderizarTabela();
+    alert(`✅ ${adc} importados\n🔁 ${dup} duplicados\n⚠️ ${ign} ignorados`);
 }
 
 async function importarGoogleSheets() {
     const match = document.getElementById('sheetsLink').value.match(/\/d\/(.*?)(\/|$)/);
     if (!match) return alert("Link inválido.");
-    const btn = document.querySelector('#tab-sheets button');
-    const txtOriginal = btn.innerHTML; btn.innerHTML = "⏳ Baixando..."; btn.disabled = true;
+    const btn = document.querySelector('#tab-sheets button'); const txt = btn.innerHTML; btn.innerHTML = "⏳ Baixando..."; btn.disabled = true;
     try {
-        const response = await fetch(`https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`);
-        if (!response.ok) throw new Error("A planilha não está pública.");
-        const workbook = XLSX.read(await response.arrayBuffer(), { type: 'array' });
-        const res = processarDados(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1}), false);
-        document.getElementById('sheetsLink').value = '';
-        alert(`Sucesso!\n✅ ${res.adicionados} adicionados\n🔁 ${res.duplicados} duplicados ignorados`);
-    } catch(error) { alert(`⚠️ Erro: ${error.message}`); } 
-    finally { btn.innerHTML = txtOriginal; btn.disabled = false; }
+        const res = await fetch(`https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`);
+        if (!res.ok) throw new Error("Planilha não está pública.");
+        const wb = XLSX.read(await res.arrayBuffer(), { type: 'array' });
+        const rData = processarDados(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1}), false);
+        document.getElementById('sheetsLink').value = ''; renderizarTabela();
+        alert(`✅ ${rData.adicionados} importados\n🔁 ${rData.duplicados} duplicados`);
+    } catch(err) { alert(`⚠️ Erro: ${err.message}`); } finally { btn.innerHTML = txt; btn.disabled = false; }
 }
 
 document.addEventListener('paste', function(e) {
-    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-    const pastedData = (e.clipboardData || window.clipboardData).getData('Text');
-    if (pastedData && pastedData.includes('\t')) {
-        e.preventDefault();
-        const res = processarDados(pastedData.split('\n').map(linha => linha.split('\t')), false);
-        alert(`Dados Colados!\n✅ ${res.adicionados} adicionados\n🔁 ${res.duplicados} duplicados`);
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    const txt = (e.clipboardData || window.clipboardData).getData('Text');
+    if (txt && txt.includes('\t')) {
+        e.preventDefault(); const r = processarDados(txt.split('\n').map(l => l.split('\t')), false);
+        renderizarTabela(); alert(`✅ ${r.adicionados} colados\n🔁 ${r.duplicados} duplicados`);
     }
 });
 
-function processarDados(matriz, exibirAlerta = true) {
-    let adicionados = 0, duplicados = 0, ignorados = 0;
+function processarDados(matriz) {
+    let adc = 0, dup = 0, ign = 0;
     for (let i = 0; i < matriz.length; i++) {
-        const linha = matriz[i];
-        if (!linha || linha.length < 3) continue;
-        let cpfBruto = linha[2] ? linha[2].toString().trim() : "";
-        if (cpfBruto.toLowerCase() === "cpf" || (linha[1] && linha[1].toString().toLowerCase() === "nome")) continue;
-        let cpfValidado = formatarEValidarCPF(cpfBruto);
-        if (!cpfValidado.valido) { ignorados++; continue; }
-        if (listaFuncionarios.find(f => f.cpf === cpfValidado.cpfFormatado)) { duplicados++; continue; }
-        listaFuncionarios.push({ codigo: linha[0] || "", nome: linha[1] ? linha[1].toString().toUpperCase().trim() : "", cpf: cpfValidado.cpfFormatado, admissao: converterData(linha[3]) });
-        adicionados++;
+        const l = matriz[i]; if (!l || l.length < 3) continue;
+        let cBruto = l[2] ? l[2].toString().trim() : "";
+        if (cBruto.toLowerCase() === "cpf" || (l[1] && l[1].toString().toLowerCase() === "nome")) continue;
+        let cValido = formatarEValidarCPF(cBruto);
+        if (!cValido.valido) { ign++; continue; }
+        if (listaFuncionarios.find(f => f.cpf === cValido.cpfFormatado)) { dup++; continue; }
+        listaFuncionarios.push({ codigo: l[0] || "", nome: l[1] ? l[1].toString().toUpperCase().trim() : "", cpf: cValido.cpfFormatado, admissao: converterData(l[3]) });
+        adc++;
     }
-    renderizarTabela(); return { adicionados, duplicados, ignorados };
+    return { adicionados: adc, duplicados: dup, ignorados: ign };
 }
-
-function limparLista() {
-    if (listaFuncionarios.length > 0 && confirm("🚨 Apagar todos os funcionários atuais da tela?")) { listaFuncionarios = []; renderizarTabela(); }
+function limparLista() { if (listaFuncionarios.length > 0 && confirm("🚨 Apagar todos da tela?")) { listaFuncionarios = []; renderizarTabela(); } }
+function formatarEValidarCPF(v) {
+    if (!v) return { valido: false }; let c = v.replace(/\D/g, '').padStart(11, '0');
+    if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return { valido: false };
+    let s = 0, r; for (let i = 1; i <= 9; i++) s += parseInt(c.substring(i - 1, i)) * (11 - i);
+    r = (s * 10) % 11; if (r >= 10) r = 0; if (r !== parseInt(c.substring(9, 10))) return { valido: false };
+    return { valido: true, cpfFormatado: c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") };
 }
-
-// ==========================================
-// 2. FUNÇÕES ÚTEIS
-// ==========================================
-function formatarEValidarCPF(valor) {
-    if (!valor) return { valido: false };
-    let cpf = valor.replace(/\D/g, '').padStart(11, '0');
-    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return { valido: false };
-    let soma = 0, resto;
-    for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
-    resto = (soma * 10) % 11; if (resto >= 10) resto = 0;
-    if (resto !== parseInt(cpf.substring(9, 10))) return { valido: false };
-    return { valido: true, cpfFormatado: cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") };
-}
-
 function converterData(v) {
-    if (!v) return new Date();
-    if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000));
-    const s = v.toString().trim();
-    if (s.includes('/')) {
-        const p = s.split('/');
-        if (p.length === 3) return new Date(p[2].split(' ')[0], p[1] - 1, p[0]);
-    }
+    if (!v) return new Date(); if (typeof v === 'number') return new Date(Math.round((v - 25569) * 86400 * 1000));
+    const s = v.toString().trim(); if (s.includes('/')) { const p = s.split('/'); if (p.length === 3) return new Date(p[2].split(' ')[0], p[1] - 1, p[0]); }
     const d = new Date(s); return isNaN(d.getTime()) ? new Date() : d;
 }
-function addDiasUteis(data, dias) {
-    let d = new Date(data); let count = 0;
-    while (count < dias) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) count++; }
-    return d;
-}
-function formataDataInput(data) { return data.toISOString().split('T')[0]; }
+function addDiasUteis(d, dQnt) { let nd = new Date(d); let c = 0; while (c < dQnt) { nd.setDate(nd.getDate() + 1); if (nd.getDay() !== 0 && nd.getDay() !== 6) c++; } return nd; }
+function fData(d) { return d.toISOString().split('T')[0]; }
 
-// ==========================================
-// 3. RENDERIZAÇÃO
-// ==========================================
 function renderizarTabela() {
-    const tbody = document.getElementById('funcTableBody');
-    if (listaFuncionarios.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5 fs-5">Nenhum dado importado.</td></tr>'; return; }
-    tbody.innerHTML = '';
+    const tb = document.getElementById('funcTableBody');
+    if (listaFuncionarios.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-5 fs-5">Nenhum dado importado.</td></tr>'; return; }
+    tb.innerHTML = '';
     listaFuncionarios.forEach((f, i) => {
-        const d0618 = addDiasUteis(f.admissao, 1), d12 = addDiasUteis(d0618, 1), d35 = addDiasUteis(f.admissao, 10);
-        tbody.innerHTML += `<tr>
-            <td class="fw-bold">${f.codigo}</td>
-            <td class="text-nowrap fw-bold">${f.nome}</td>
-            <td class="text-nowrap">${f.cpf}</td>
-            <td class="text-nowrap">${f.admissao.toLocaleDateString('pt-BR')}</td>
-            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr06_chk_${i}"></div><input type="date" id="nr06_dt_${i}" value="${formataDataInput(d0618)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
-            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr12_chk_${i}"></div><input type="date" id="nr12_dt_${i}" value="${formataDataInput(d12)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
-            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr18_chk_${i}"></div><input type="date" id="nr18_dt_${i}" value="${formataDataInput(d0618)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
-            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr35_chk_${i}"></div><input type="date" id="nr35_dt_${i}" value="${formataDataInput(d35)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
+        const d06 = addDiasUteis(f.admissao, 1), d12 = addDiasUteis(d06, 1), d35 = addDiasUteis(f.admissao, 10);
+        tb.innerHTML += `<tr>
+            <td class="fw-bold">${f.codigo}</td><td class="text-nowrap fw-bold">${f.nome}</td><td class="text-nowrap">${f.admissao.toLocaleDateString('pt-BR')}</td>
+            <td><div class="d-flex align-items-center"><div class="form-check form-switch me-2"><input class="form-check-input" type="checkbox" id="nr06_chk_${i}"></div><input type="date" id="nr06_dt_${i}" value="${fData(d06)}" class="form-control form-control-sm" min="${fData(f.admissao)}"></div></td>
+            <td><div class="d-flex align-items-center"><div class="form-check form-switch me-2"><input class="form-check-input" type="checkbox" id="nr12_chk_${i}"></div><input type="date" id="nr12_dt_${i}" value="${fData(d12)}" class="form-control form-control-sm" min="${fData(f.admissao)}"></div></td>
+            <td><div class="d-flex align-items-center"><div class="form-check form-switch me-2"><input class="form-check-input" type="checkbox" id="nr18_chk_${i}"></div><input type="date" id="nr18_dt_${i}" value="${fData(d06)}" class="form-control form-control-sm" min="${fData(f.admissao)}"></div></td>
+            <td><div class="d-flex align-items-center"><div class="form-check form-switch me-2"><input class="form-check-input" type="checkbox" id="nr35_chk_${i}"></div><input type="date" id="nr35_dt_${i}" value="${fData(d35)}" class="form-control form-control-sm" min="${fData(f.admissao)}"></div></td>
         </tr>`;
     });
 }
 
-// ==========================================
-// 4. GESTÃO DE TSTs
-// ==========================================
 function adicionarTST() {
     const nome = document.getElementById('tstNome').value.toUpperCase().trim();
     const reg = document.getElementById('tstReg').value.trim();
     const nrs = Array.from(document.querySelectorAll('.tst-nr:checked')).map(cb => cb.value);
     
-    if (!nome) return alert("❌ Preencha o Nome Completo do TST.");
-    if (!reg) return alert("❌ Preencha o Nº de Registro do TST.");
+    if (!nome || !reg) return alert("❌ Preencha Nome e Registro do TST.");
     if (nrs.length === 0) return alert("❌ Marque pelo menos 1 NR habilitada para este TST.");
     
     let assinatura = null;
-    if (document.getElementById('chkAssinatura').checked && canvas) assinatura = canvas.toDataURL('image/png');
+    if (assinaturaPreenchida && canvas) assinatura = canvas.toDataURL('image/png');
 
     listaTSTs.push({ nome, registro: reg, nrs, assinatura });
     
     document.getElementById('tstNome').value = ''; document.getElementById('tstReg').value = '';
     document.querySelectorAll('.tst-nr').forEach(cb => cb.checked = false);
-    document.getElementById('chkAssinatura').checked = false; toggleAssinatura(); limparCanvas();
-    atualizarListaTST();
-}
-
-function editarTST(index) {
-    const t = listaTSTs[index];
-    document.getElementById('tstNome').value = t.nome;
-    document.getElementById('tstReg').value = t.registro;
-    document.querySelectorAll('.tst-nr').forEach(cb => { cb.checked = t.nrs.includes(cb.value); });
-    listaTSTs.splice(index, 1); atualizarListaTST(); document.getElementById('tstNome').focus();
+    limparCanvas(); atualizarListaTST();
 }
 
 function atualizarListaTST() {
     document.getElementById('tstList').innerHTML = listaTSTs.map((t, i) => `
-        <div class="badge bg-secondary p-3 d-flex align-items-center flex-column flex-md-row fs-6">
-            <span>👤 ${t.nome} (${t.registro}) <br class="d-md-none"> 📌 NRs: ${t.nrs.join(', ')} ${t.assinatura ? '🖋️' : ''}</span>
+        <div class="badge bg-secondary p-3 d-flex align-items-center flex-column flex-md-row fs-6 border border-warning text-white">
+            <span>👤 ${t.nome} (${t.registro}) <br class="d-md-none"> 📌 NRs: ${t.nrs.join(', ')} ${t.assinatura ? '🖋️ (Com Assinatura)' : ''}</span>
             <div class="mt-2 mt-md-0 ms-md-3">
-                <button class="btn btn-sm btn-light text-primary py-0" onclick="editarTST(${i})">✏️ Editar</button>
-                <button class="btn btn-sm btn-light text-danger py-0" onclick="listaTSTs.splice(${i}, 1); atualizarListaTST();">✖ Remover</button>
+                <button class="btn btn-sm btn-light text-danger py-0 fw-bold" onclick="listaTSTs.splice(${i}, 1); atualizarListaTST();">✖ Remover</button>
             </div>
         </div>`).join('');
 }
 
-// ==========================================
-// 5. INTEGRAÇÃO E ENVIO (Sem Template Secreto)
-// ==========================================
 async function gerarCertificados(destino) {
-    const footer = document.getElementById('creditos-dev');
-    if (!footer || !footer.innerHTML.includes('Daniel Filipe Rosa') || !footer.innerHTML.includes('Caroline Ávila')) {
-        document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#111; color:#FF8C00; flex-direction:column; text-align:center;">
-            <h1>⚠️ ACESSO BLOQUEADO</h1><h3>Violação de Autoria.</h3></div>`;
+    // NOVA TRAVA DE SEGURANÇA (Textos idênticos ao Footer)
+    const fHtml = document.getElementById('creditos-dev')?.innerHTML || "";
+    if (!fHtml.includes('DDFR LTDA') || !fHtml.includes('C.A Segurança do Trabalho LTDA') || !fHtml.includes('danielf.r@hotmail.com')) {
+        document.body.innerHTML = `<div style="display:flex;height:100vh;align-items:center;justify-content:center;background:#111;color:#FF8C00;flex-direction:column;"><h1>⚠️ SISTEMA BLOQUEADO</h1><h3>Violação de Direitos Autorais.</h3></div>`;
         return; 
     }
 
     if (listaFuncionarios.length === 0) return alert("Importe os funcionários primeiro.");
     
-    // O Template não é mais enviado no pacote. O Google Apps Script vai ler direto da planilha!
-    const pacote = { destino: destino, emails: document.getElementById('emailsDestino').value.split(',').map(e=>e.trim()).filter(e=>e), tsts: listaTSTs, funcionarios: [] };
+    const pacote = { destino, emails: document.getElementById('emailsDestino').value.split(',').map(e=>e.trim()).filter(e=>e), tsts: listaTSTs, funcionarios: [] };
 
-    let nrsRequisitadas = new Set();
+    let nrsReq = new Set();
     listaFuncionarios.forEach((f, i) => {
-        let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [] };
+        let req = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [] };
         ['06', '12', '18', '35'].forEach(nr => {
             if (document.getElementById(`nr${nr}_chk_${i}`).checked) {
-                funcReq.nrs.push({ tipo: `NR ${nr}`, data: document.getElementById(`nr${nr}_dt_${i}`).value.split('-').reverse().join('/') });
-                nrsRequisitadas.add(`NR ${nr}`);
+                req.nrs.push({ tipo: `NR ${nr}`, data: document.getElementById(`nr${nr}_dt_${i}`).value.split('-').reverse().join('/') });
+                nrsReq.add(`NR ${nr}`);
             }
         });
-        if (funcReq.nrs.length > 0) pacote.funcionarios.push(funcReq);
+        if (req.nrs.length > 0) pacote.funcionarios.push(req);
     });
 
-    if (pacote.funcionarios.length === 0) return alert("⚠️ Nenhuma NR foi marcada para nenhum funcionário.");
+    if (pacote.funcionarios.length === 0) return alert("⚠️ Você não marcou NENHUMA norma na tabela (Ligue as chaves verdes).");
 
-    let nrsCobertas = new Set();
-    listaTSTs.forEach(tst => tst.nrs.forEach(nr => nrsCobertas.add(nr)));
-    for (let nrNecessaria of nrsRequisitadas) {
-        if (!nrsCobertas.has(nrNecessaria)) return alert(`🚨 GERAÇÃO BLOQUEADA!\nFalta um TST habilitado para a norma: ${nrNecessaria}`);
-    }
+    let nrsCob = new Set(); listaTSTs.forEach(t => t.nrs.forEach(n => nrsCob.add(n)));
+    for (let nr of nrsReq) if (!nrsCob.has(nr)) return alert(`🚨 GERAÇÃO BLOQUEADA!\nFalta TST para a norma: ${nr}`);
 
-    const btnZip = document.getElementById('btnZip'); const btnEmail = document.getElementById('btnEmail'); const status = document.getElementById('statusProcessamento');
-    btnZip.disabled = true; btnEmail.disabled = true;
-    status.innerHTML = `<span class="spinner-border spinner-border-sm" style="color: var(--piacentini-orange);"></span> Gerando documentos na Nuvem...`;
-    status.style.color = 'var(--piacentini-orange)';
+    const s = document.getElementById('statusProcessamento');
+    document.getElementById('btnZip').disabled = true; document.getElementById('btnEmail').disabled = true;
+    s.innerHTML = `⏳ Gerando documentos na Nuvem...`;
 
     try {
         const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pacote) });
+        if (!response.ok) throw new Error("Erro de comunicação com o servidor."); // Captura erros HTTP
         const result = await response.json();
         if (result.sucesso) {
-            status.className = "mt-4 fs-5 fw-bold text-center text-success";
-            status.innerHTML = `✅ ${result.total} certificados gerados.`;
-            if (destino === 'ZIP' && result.link) status.innerHTML += `<br><br><a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold">📥 BAIXAR ARQUIVO ZIP</a>`;
+            s.className = "mt-4 fs-5 fw-bold text-center text-success"; s.innerHTML = `✅ ${result.total} certificados gerados.`;
+            if (destino === 'ZIP' && result.link) s.innerHTML += `<br><br><a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold">📥 BAIXAR ARQUIVO ZIP</a>`;
         } else throw new Error(result.erro);
     } catch (error) {
-        status.className = "mt-4 fs-5 fw-bold text-center text-danger";
-        status.innerHTML = `❌ Erro do Servidor: ${error.message}`;
+        s.className = "mt-4 fs-5 fw-bold text-center text-danger"; s.innerHTML = `❌ Erro: ${error.message}`;
     }
-    btnZip.disabled = false; btnEmail.disabled = false;
+    document.getElementById('btnZip').disabled = false; document.getElementById('btnEmail').disabled = false;
 }
