@@ -20,20 +20,17 @@
     <div class="card-custom p-4">
         <h5 class="fw-bold mb-3">1. BASE DE COLABORADORES (IMPORTAÇÃO)</h5>
         
-        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-excel-tab" data-bs-toggle="pill" data-bs-target="#pills-excel" type="button" role="tab">📂 Importar Excel</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-sheets-tab" data-bs-toggle="pill" data-bs-target="#pills-sheets" type="button" role="tab">☁️ Importar Google Sheets</button>
-            </li>
-        </ul>
+        <div class="mb-3">
+            <a href="LINK_EXCEL_SECRET" target="_blank" class="btn btn-outline-success btn-sm me-2 fw-bold">
+                📊 Baixar Template (.xlsx)
+            </a>
+            <a href="LINK_PLANILHA_SECRET" target="_blank" class="btn btn-outline-primary btn-sm fw-bold">
+                📄 Acessar Template (Drive)
+            </a>
+        </div>
         
-        <div class="tab-content" id="pills-tabContent">
-            <div class="tab-pane fade show active" id="pills-excel" role="tabpanel">
-                <label class="form-label">Selecione seus arquivos (.xlsx):</label>
-                <input type="file" id="fileInput" class="form-control mb-2" accept=".xlsx, .xls, .csv" multiple>
-            </div>
+        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                 
             <div class="tab-pane fade" id="pills-sheets" role="tabpanel">
                 <label class="form-label">Cole o link da sua planilha (Google Sheets):</label>
                 <input type="text" id="linkSheets" class="form-control mb-2" placeholder="https://docs.google.com/spreadsheets/d/...">
@@ -108,7 +105,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Nº Registro (Obrigatório /UF)</label>
-                <input type="text" id="tstReg" class="form-control text-uppercase" placeholder="Ex: 0000000/SP">
+                <input type="text" id="tstReg" class="form-control text-uppercase" placeholder="Ex: 0000000/PR">
             </div>
             <div class="col-md-3">
                 <label class="form-label d-block">Normas do Profissional:</label>
@@ -163,11 +160,26 @@
         <div id="statusProcessamento" class="mt-3"></div>
     </div>
 
-    <div id="creditos-dev" class="footer-creditos">
-        Desenvolvido por:<br>
-        <strong>Eng. Daniel Filipe Rosa (DDFR LTDA)</strong> e <strong>TST Caroline Ávila (C.A Segurança do Trabalho LTDA)</strong><br>
-        🔗 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a> | 
-        ✉️ <a href="mailto:danielf.r@hotmail.com?subject=Dúvida%20-%20Portal%20de%20Certificados&body=Olá%20Daniel,%20preciso%20de%20ajuda%20com%20o%20sistema.%20O%20problema%20é:">Email: danielf.r@hotmail.com</a>
+    <div id="creditos-dev" class="footer-creditos mt-4">
+        <div class="d-none d-md-block text-center">
+            Desenvolvido por:<br>
+            <strong>Eng. Daniel Filipe Rosa (DDFR LTDA)</strong> e <strong>TST Caroline Ávila (C.A Segurança do Trabalho LTDA)</strong><br>
+            📷 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a> | 
+            ✉️ <a href="mailto:danielf.r@hotmail.com?subject=Dúvida%20-%20Portal%20de%20Certificados">Email: danielf.r@hotmail.com</a>
+        </div>
+        
+        <div class="d-block d-md-none text-center">
+            Desenvolvido por:<br>
+            <strong>Eng. Daniel Filipe Rosa</strong><br>
+            (DDFR LTDA)<br>
+            📷 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a><br>
+            ✉️ <a href="mailto:danielf.r@hotmail.com?subject=Dúvida%20-%20Portal%20de%20Certificados">Email: danielf.r@hotmail.com</a>
+            
+            <hr style="border-top: 1px solid rgba(255,255,255,0.2); margin: 15px 20%;">
+            
+            <strong>TST Caroline Ávila</strong><br>
+            (C.A Segurança do Trabalho LTDA)
+        </div>
     </div>
 
 </div>
