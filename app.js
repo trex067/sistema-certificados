@@ -418,12 +418,48 @@ function formatarEValidarCPF(valor) {
     return { valido: true, cpfFormatado: cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") };
 }
 
+// ==========================================
+// EXTRATOR AVANÇADO DE DATAS (O CAOS NUNCA VENCE)
+// ==========================================
 function converterData(valor) {
     if (!valor) return new Date();
+    
+    // Se a data vier do Excel num formato serial (ex: 43567)
     if (typeof valor === 'number') return new Date(Math.round((valor - 25569) * 86400 * 1000));
-    const partes = valor.toString().split('/');
-    if (partes.length === 3) return new Date(partes[2], partes[1]-1, partes[0]);
-    return new Date(valor);
+    
+    let valorStr = valor.toString().trim().toLowerCase();
+    
+    // 1. Tratamento para formato por extenso (Ex: "07 de Jun de 2019", "15 de Oct de 2018")
+    if (valorStr.includes(' de ')) {
+        const meses = {
+            'jan': 0, 'feb': 1, 'fev': 1, 'mar': 2, 'apr': 3, 'abr': 3, 'may': 4, 'mai': 4, 'jun': 5,
+            'jul': 6, 'aug': 7, 'ago': 7, 'sep': 8, 'set': 8, 'oct': 9, 'out': 9, 'nov': 10, 'dec': 11, 'dez': 11
+        };
+        let partes = valorStr.split(' de ');
+        if (partes.length === 3) {
+            let dia = parseInt(partes[0], 10);
+            let mesStr = partes[1].substring(0, 3);
+            let ano = parseInt(partes[2], 10);
+            let mes = meses[mesStr] !== undefined ? meses[mesStr] : 0;
+            return new Date(ano, mes, dia);
+        }
+    }
+
+    // 2. Tratamento para pontuações malucas (Ex: 15.06.23, 2024-04-27, 24/08/17)
+    let formatado = valorStr.replace(/[\.\-]/g, '/'); // Troca traços e pontos por barra padronizada
+    let partes = formatado.split('/');
+    
+    if (partes.length === 3) {
+        if (partes[0].length === 4) { // Se for formato gringo YYYY/MM/DD
+            return new Date(parseInt(partes[0]), parseInt(partes[1])-1, parseInt(partes[2]));
+        } else { // Formato BR: DD/MM/YY ou DD/MM/YYYY
+            let ano = parseInt(partes[2]);
+            if (ano < 100) ano += 2000; // Converte anos como "17" para "2017"
+            return new Date(ano, parseInt(partes[1])-1, parseInt(partes[0]));
+        }
+    }
+    
+    return new Date(); // Fallback se tudo falhar
 }
 
 async function gerarCertificados(destino) {
