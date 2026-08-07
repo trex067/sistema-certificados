@@ -3,158 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma de Certificados - Construtora</title>
+    <title>Certificados NR - Construtora Piacentini</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <style>
-        /* Ajuste para a tabela não espremer os dados */
-        .text-nowrap { white-space: nowrap !important; }
-        .col-min-width { min-width: 140px; }
-    </style>
 </head>
-<body class="bg-light">
+<body>
 
-<nav class="navbar navbar-dark bg-construtora shadow-sm">
-    <div class="container">
-        <span class="navbar-brand mb-0 h1">🚧 Portal de Certificados NR</span>
+<nav class="navbar navbar-dark bg-construtora shadow">
+    <div class="container-fluid px-3 px-md-5">
+        <span class="navbar-brand mb-0 h1 d-flex align-items-center">
+            <span style="color: var(--piacentini-orange); font-size: 1.5rem; margin-right: 10px;">🚧</span> 
+            PORTAL DE CERTIFICADOS
+        </span>
     </div>
 </nav>
 
-<div class="container-fluid px-4 my-4">
-    <!-- SEÇÃO 1: DADOS -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
+<div class="container-fluid px-3 px-md-5 my-4">
+    
+    <!-- SEÇÃO 1: IMPORTAÇÃO -->
+    <div class="card mb-4">
+        <div class="card-header">
+            1. Base de Colaboradores
+        </div>
         <div class="card-body">
-            <div class="d-flex mb-3">
-                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/export?format=xlsx" target="_blank" class="btn btn-outline-success btn-sm me-2">📥 Baixar Template (.xlsx)</a>
-                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/copy" target="_blank" class="btn btn-outline-primary btn-sm">📄 Acessar Template (Google Sheets)</a>
+            
+            <div class="d-grid gap-2 d-md-flex mb-4">
+                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/export?format=xlsx" target="_blank" class="btn btn-outline-construtora">
+                    📥 Baixar Template (.xlsx)
+                </a>
+                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/copy" target="_blank" class="btn btn-outline-construtora">
+                    📄 Acessar Template (Drive)
+                </a>
             </div>
             
-            <ul class="nav nav-tabs" id="inputTab" role="tablist">
-                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-arquivo">Importar Excel</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sheets">Importar Google Sheets</button></li>
+            <ul class="nav nav-pills mb-3" id="inputTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" data-bs-toggle="pill" data-bs-target="#tab-arquivo">📂 Importar Excel</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" data-bs-toggle="pill" data-bs-target="#tab-sheets">☁️ Importar Google Sheets</button>
+                </li>
             </ul>
-            <div class="tab-content border border-top-0 p-3 bg-white">
+            
+            <div class="tab-content bg-light p-3 border rounded">
                 <div class="tab-pane fade show active" id="tab-arquivo">
-                    <label class="form-label text-muted">Selecione um ou mais arquivos Excel (.xlsx):</label>
-                    <div class="input-group">
-                        <input class="form-control" type="file" id="fileInput" accept=".xlsx, .xls" multiple>
-                        <button class="btn btn-success" onclick="importarArquivosExcel()">📥 Importar</button>
+                    <label class="form-label fw-bold">Selecione seus arquivos (.xlsx):</label>
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <input class="form-control form-control-lg" type="file" id="fileInput" accept=".xlsx, .xls" multiple>
+                        <button class="btn btn-construtora btn-lg px-4" onclick="importarArquivosExcel()">Importar</button>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="tab-sheets">
-                    <label class="form-label text-muted">Cole o link da sua planilha do Google Sheets:</label>
-                    <div class="input-group">
-                        <input type="text" id="sheetsLink" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
-                        <button class="btn btn-primary" onclick="importarGoogleSheets()">📥 Importar</button>
+                    <label class="form-label fw-bold">Cole o link da Planilha Pública:</label>
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <input type="text" id="sheetsLink" class="form-control form-control-lg" placeholder="https://docs.google.com/spreadsheets/...">
+                        <button class="btn btn-construtora btn-lg px-4" onclick="importarGoogleSheets()">Importar</button>
                     </div>
-                    <small class="text-danger">⚠️ A planilha no drive precisa estar configurada como "Qualquer pessoa com o link".</small>
                 </div>
             </div>
-            <div class="mt-3 text-end">
-                <button class="btn btn-outline-danger btn-sm" onclick="limparLista()">🗑️ Limpar Lista Atual</button>
+            
+            <div class="mt-3 text-md-end text-center">
+                <button class="btn btn-sm btn-danger px-3 py-2 fw-bold" onclick="limparLista()">🗑️ Limpar Lista de Funcionários</button>
             </div>
         </div>
     </div>
 
-    <!-- SEÇÃO 2: SELEÇÃO E DATAS -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white text-construtora fw-bold">2. Funcionários e NRs (Revise e Ajuste)</div>
-        <div class="card-body">
-            <div class="alert alert-info py-2" role="alert" style="font-size: 0.95rem;">
-                💡 <strong>Agilidade:</strong> Você também pode copiar as colunas no Excel e apertar <strong>CTRL + V</strong> nesta página para adicionar manualmente!
+    <!-- SEÇÃO 2: TABELA -->
+    <div class="card mb-4">
+        <div class="card-header">
+            2. Ajuste de Cursos e Datas
+        </div>
+        <div class="card-body p-0 p-md-3">
+            <div class="alert alert-secondary m-3 m-md-0 mb-md-3" role="alert">
+                💡 <strong>Dica:</strong> Dê <strong>CTRL + V</strong> em qualquer lugar desta página para colar dados copiados do Excel! Deslize a tabela para os lados no celular.
             </div>
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-light text-nowrap">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="text-nowrap">
                         <tr>
                             <th>Cód</th>
-                            <th class="col-min-width">Nome</th>
+                            <th class="col-min-width">Colaborador</th>
                             <th>CPF</th>
                             <th>Admissão</th>
-                            <th class="col-min-width">Gerar NR 06<br><small>Data</small></th>
-                            <th class="col-min-width">Gerar NR 12<br><small>Data</small></th>
-                            <th class="col-min-width">Gerar NR 18<br><small>Data</small></th>
-                            <th class="col-min-width">Gerar NR 35<br><small>Data</small></th>
+                            <th class="col-min-width">Gerar NR 06<br><small class="text-muted">Data do Curso</small></th>
+                            <th class="col-min-width">Gerar NR 12<br><small class="text-muted">Data do Curso</small></th>
+                            <th class="col-min-width">Gerar NR 18<br><small class="text-muted">Data do Curso</small></th>
+                            <th class="col-min-width">Gerar NR 35<br><small class="text-muted">Data do Curso</small></th>
                         </tr>
                     </thead>
                     <tbody id="funcTableBody">
-                        <tr><td colspan="8" class="text-center text-muted py-4">Importe planilhas ou dê um CTRL+V para visualizar os dados</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-5">Nenhum dado importado.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- SEÇÃO 3: TSTs (Com Assinatura Digital) -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white text-construtora fw-bold">3. Cadastrar Técnicos de Segurança (TST)</div>
+    <!-- SEÇÃO 3: TSTs -->
+    <div class="card mb-4">
+        <div class="card-header">
+            3. Habilitação de Instrutores (TST)
+        </div>
         <div class="card-body">
-            <div class="row g-3 align-items-start">
-                <div class="col-md-3">
-                    <input type="text" id="tstNome" class="form-control text-uppercase" placeholder="Nome Completo (Obrigatório)">
-                    <input type="text" id="tstReg" class="form-control mt-2" placeholder="Nº de Registro (Obrigatório)">
+            <div class="row g-3 align-items-center">
+                <div class="col-12 col-lg-3">
+                    <input type="text" id="tstNome" class="form-control form-control-lg text-uppercase mb-2" placeholder="Nome Completo">
+                    <input type="text" id="tstReg" class="form-control form-control-lg" placeholder="Registro (Ex: PR-1234)">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold mb-1">Normas que este TST pode assinar (Marque ao menos 1):</label><br>
-                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 06"> NR 06</div>
-                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 12"> NR 12</div>
-                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 18"> NR 18</div>
-                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 35"> NR 35</div>
+                <div class="col-12 col-lg-4 p-3 bg-light rounded border">
+                    <label class="form-label fw-bold d-block mb-2 text-center text-lg-start">Normas Habilitadas:</label>
+                    <div class="d-flex flex-wrap justify-content-center justify-content-lg-start gap-3">
+                        <div class="form-check form-switch fs-5"><input class="form-check-input tst-nr" type="checkbox" value="NR 06" id="nr06tst"><label class="form-check-label" for="nr06tst">NR06</label></div>
+                        <div class="form-check form-switch fs-5"><input class="form-check-input tst-nr" type="checkbox" value="NR 12" id="nr12tst"><label class="form-check-label" for="nr12tst">NR12</label></div>
+                        <div class="form-check form-switch fs-5"><input class="form-check-input tst-nr" type="checkbox" value="NR 18" id="nr18tst"><label class="form-check-label" for="nr18tst">NR18</label></div>
+                        <div class="form-check form-switch fs-5"><input class="form-check-input tst-nr" type="checkbox" value="NR 35" id="nr35tst"><label class="form-check-label" for="nr35tst">NR35</label></div>
+                    </div>
                 </div>
-                <div class="col-md-3 text-center">
-                    <div class="form-check mb-1">
+                <div class="col-12 col-lg-3 text-center">
+                    <div class="form-check form-switch d-inline-block mb-2 fs-6">
                         <input class="form-check-input" type="checkbox" id="chkAssinatura" onchange="toggleAssinatura()">
-                        <label class="form-check-label fw-bold" for="chkAssinatura">Incluir Assinatura Digital</label>
+                        <label class="form-check-label fw-bold" for="chkAssinatura">Assinar na Tela</label>
                     </div>
-                    <div id="boxAssinatura" style="display: none;">
-                        <canvas id="canvasAssinatura" width="250" height="80" style="border:1px dashed #0A3A66; background:#f8f9fa; cursor:crosshair; border-radius: 4px;"></canvas>
-                        <br><button class="btn btn-sm btn-link text-danger p-0" onclick="limparCanvas()">Limpar Assinatura</button>
+                    <div id="boxAssinatura" style="display: none; width: 100%; overflow: hidden;">
+                        <canvas id="canvasAssinatura" width="280" height="100" style="border:2px dashed var(--piacentini-orange); background:#fff; cursor:crosshair; border-radius: 8px; touch-action: none; max-width: 100%;"></canvas>
+                        <br><button class="btn btn-sm btn-link text-danger text-decoration-none mt-1" onclick="limparCanvas()">Limpar Desenho</button>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <button class="btn btn-construtora w-100" id="btnSalvarTST" onclick="adicionarTST()">Adicionar TST</button>
+                <div class="col-12 col-lg-2">
+                    <button class="btn btn-construtora btn-lg w-100" id="btnSalvarTST" onclick="adicionarTST()">➕ Adicionar TST</button>
                 </div>
             </div>
-            <hr>
-            <div id="tstList" class="mt-2"></div>
+            <div id="tstList" class="mt-4 d-flex flex-wrap gap-2"></div>
         </div>
     </div>
 
     <!-- SEÇÃO 4: GERAÇÃO -->
-    <div class="card mb-4 border-primary">
-        <div class="card-body bg-light">
-            <h5 class="card-title text-primary">4. Finalizar e Gerar</h5>
-            <div class="row align-items-end">
-                <div class="col-md-6">
-                    <label>E-mails para recebimento (separados por vírgula):</label>
-                    <input type="text" id="emailsDestino" class="form-control" placeholder="engenharia@empresa.com, rh@empresa.com">
+    <div class="card mb-5 border-0 shadow-lg" style="background-color: var(--piacentini-black); color: white;">
+        <div class="card-body p-4 p-md-5">
+            <h3 class="mb-4 text-center" style="color: var(--piacentini-orange);">4. Emitir Certificados</h3>
+            <div class="row g-4 align-items-end">
+                <div class="col-12 col-md-7">
+                    <label class="fw-bold mb-2">Enviar cópias para os E-mails (Use vírgula para separar):</label>
+                    <input type="text" id="emailsDestino" class="form-control form-control-lg" placeholder="engenharia@empresa.com, rh@empresa.com">
                 </div>
-                <div class="col-md-6 text-end mt-3 mt-md-0">
-                    <button class="btn btn-outline-primary me-2" onclick="gerarCertificados('ZIP')" id="btnZip">📦 Baixar tudo em .ZIP</button>
-                    <button class="btn btn-primary" onclick="gerarCertificados('EMAIL')" id="btnEmail">✉️ Enviar por E-mail</button>
+                <div class="col-12 col-md-5 text-center text-md-end">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button class="btn btn-light btn-lg px-4 fw-bold" onclick="gerarCertificados('ZIP')" id="btnZip">📦 Baixar .ZIP</button>
+                        <button class="btn btn-construtora btn-lg px-5" onclick="gerarCertificados('EMAIL')" id="btnEmail">✉️ Disparar E-mails</button>
+                    </div>
                 </div>
             </div>
-            <div id="statusProcessamento" class="mt-3 fw-bold text-center"></div>
+            <div id="statusProcessamento" class="mt-4 fs-5 fw-bold text-center"></div>
         </div>
     </div>
 </div>
 
-<script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec"; 
-    const TEMPLATE_ID = "https://docs.google.com/presentation/d/1jpYmmbwQ7RY7_88w7wzc_VSzs3SZBfhlhIUYd4kbHyI/edit?usp=sharing"; 
-</script>
+<script>const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec";</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="app.js"></script>
 
-<footer id="creditos-dev" class="mt-5 pb-4 text-center">
-    <div class="card shadow-sm border-0 bg-light" style="max-width: 600px; margin: 0 auto;">
-        <div class="card-body py-3">
-            <p class="mb-1 text-muted" style="font-size: 0.9rem;">🚧 <strong>Portal Automático de Certificados NR</strong></p>
-            <p class="mb-0 text-muted" style="font-size: 0.85rem;">Desenvolvido por <strong>Eng. Daniel Filipe Rosa</strong> e <strong>TST Caroline Ávila</strong></p>
-            <a href="https://instagram.com/eng.daniel.filipe" target="_blank" class="text-decoration-none mt-1 d-inline-block" style="color: var(--cor-secundaria); font-weight: 600; font-size: 0.85rem;">🔗 @eng.daniel.filipe</a>
-        </div>
+<footer id="creditos-dev" class="py-4 text-center" style="background-color: var(--piacentini-dark-gray);">
+    <div class="container text-light">
+        <p class="mb-1" style="font-size: 0.9rem;">🚧 <strong>Portal Automático de Certificados NR</strong></p>
+        <p class="mb-0" style="font-size: 0.85rem; color: #ccc;">Desenvolvido por <strong>Eng. Daniel Filipe Rosa</strong> e <strong>TST Caroline Ávila</strong></p>
+        <a href="https://instagram.com/eng.daniel.filipe" target="_blank" class="text-decoration-none mt-2 d-inline-block" style="color: var(--piacentini-orange); font-weight: 700; font-size: 0.85rem;">🔗 @eng.daniel.filipe</a>
     </div>
 </footer>
 </body>
