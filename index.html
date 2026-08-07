@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plataforma de Certificados - Construtora</title>
-    <!-- Usando Bootstrap para um layout profissional rápido -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- SheetJS para ler Excel localmente no navegador -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-light">
@@ -20,38 +18,82 @@
 
 <div class="container my-4">
     <!-- SEÇÃO 1: DADOS -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
-    <div class="card-body">
-        
-        <div class="d-flex mb-3">
-            <a href="__LINK_EXCEL_SECRET__" target="_blank" class="btn btn-outline-success btn-sm me-2">
-                📥 Baixar Template (.xlsx)
-            </a>
-            <a href="__LINK_PLANILHA_SECRET__" target="_blank" class="btn btn-outline-primary btn-sm">
-                📄 Acessar Template (Google Sheets)
-            </a>
-        </div>
-        
-        <ul class="nav nav-tabs" id="inputTab" role="tablist">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
+        <div class="card-body">
+            
+            <div class="d-flex mb-3">
+                <a href="__LINK_EXCEL_SECRET__" target="_blank" class="btn btn-outline-success btn-sm me-2">
+                    📥 Baixar Template (.xlsx)
+                </a>
+                <a href="__LINK_PLANILHA_SECRET__" target="_blank" class="btn btn-outline-primary btn-sm">
+                    📄 Acessar Template (Google Sheets)
+                </a>
+            </div>
+            
+            <ul class="nav nav-tabs" id="inputTab" role="tablist">
                 <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-arquivo">Importar Excel</button></li>
-                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-colar">Colar Dados</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sheets">Importar Google Sheets</button></li>
             </ul>
             <div class="tab-content border border-top-0 p-3 bg-white">
+                
+                <!-- ABA EXCEL -->
                 <div class="tab-pane fade show active" id="tab-arquivo">
-                    <input class="form-control" type="file" id="fileInput" accept=".xlsx, .xls">
+                    <label class="form-label text-muted">Selecione um ou mais arquivos Excel (.xlsx):</label>
+                    <div class="input-group">
+                        <input class="form-control" type="file" id="fileInput" accept=".xlsx, .xls" multiple>
+                        <button class="btn btn-success" onclick="importarArquivosExcel()">📥 Importar</button>
+                    </div>
                 </div>
-                <div class="tab-pane fade" id="tab-colar">
-                    <textarea id="pasteInput" class="form-control" rows="4" placeholder="Cole aqui os dados copiados do Excel (CÓDIGO | NOME | CPF | DATA ADMISSÃO)"></textarea>
-                    <button class="btn btn-primary mt-2" onclick="processarTextoColado()">Processar Texto</button>
+
+                <!-- ABA GOOGLE SHEETS -->
+                <div class="tab-pane fade" id="tab-sheets">
+                    <label class="form-label text-muted">Cole o link da sua planilha do Google Sheets:</label>
+                    <div class="input-group">
+                        <input type="text" id="sheetsLink" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
+                        <button class="btn btn-primary" onclick="importarGoogleSheets()">📥 Importar</button>
+                    </div>
+                    <small class="text-danger">⚠️ A planilha no drive precisa estar configurada como "Qualquer pessoa com o link".</small>
                 </div>
+
+            </div>
+
+            <!-- BOTÃO DE LIMPEZA -->
+            <div class="mt-3 text-end">
+                <button class="btn btn-outline-danger btn-sm" onclick="limparLista()">🗑️ Limpar Lista Atual e Começar do Zero</button>
             </div>
         </div>
     </div>
 
-    <!-- SEÇÃO 2: TSTs -->
+    <!-- SEÇÃO 2: SELEÇÃO E DATAS (Trazido para cima) -->
     <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white text-construtora fw-bold">2. Cadastrar Técnicos de Segurança (TST)</div>
+        <div class="card-header bg-white text-construtora fw-bold">2. Funcionários e NRs (Revise e Ajuste)</div>
+        <div class="card-body">
+            <div class="alert alert-info py-2" role="alert" style="font-size: 0.95rem;">
+                💡 <strong>Agilidade:</strong> Você também pode copiar as colunas no Excel e apertar <strong>CTRL + V</strong> em qualquer lugar desta página para adicionar funcionários manualmente à lista abaixo!
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cód</th><th>Nome</th><th>CPF</th><th>Admissão</th>
+                            <th>Gerar NR 06<br><small>Data</small></th>
+                            <th>Gerar NR 12<br><small>Data</small></th>
+                            <th>Gerar NR 18<br><small>Data</small></th>
+                            <th>Gerar NR 35<br><small>Data</small></th>
+                        </tr>
+                    </thead>
+                    <tbody id="funcTableBody">
+                        <tr><td colspan="8" class="text-center text-muted py-4">Importe planilhas ou dê um CTRL+V para visualizar os dados</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 3: TSTs (Movido para baixo) -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white text-construtora fw-bold">3. Cadastrar Técnicos de Segurança (TST)</div>
         <div class="card-body">
             <div class="row g-2 align-items-center">
                 <div class="col-md-3"><input type="text" id="tstNome" class="form-control" placeholder="Nome Completo"></div>
@@ -68,31 +110,10 @@
         </div>
     </div>
 
-    <!-- SEÇÃO 3: SELEÇÃO E DATAS -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white text-construtora fw-bold">3. Funcionários e NRs (Revise e Ajuste)</div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Cód</th><th>Nome</th><th>CPF</th><th>Admissão</th>
-                        <th>Gerar NR 06<br><small>Data</small></th>
-                        <th>Gerar NR 12<br><small>Data</small></th>
-                        <th>Gerar NR 18<br><small>Data</small></th>
-                        <th>Gerar NR 35<br><small>Data</small></th>
-                    </tr>
-                </thead>
-                <tbody id="funcTableBody">
-                    <tr><td colspan="8" class="text-center text-muted">Importe dados para visualizar</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
     <!-- SEÇÃO 4: GERAÇÃO -->
     <div class="card mb-4 border-primary">
         <div class="card-body bg-light">
-            <h5 class="card-title text-primary">Finalizar e Gerar</h5>
+            <h5 class="card-title text-primary">4. Finalizar e Gerar</h5>
             <div class="row align-items-end">
                 <div class="col-md-6">
                     <label>E-mails para recebimento (separados por vírgula):</label>
@@ -113,7 +134,8 @@
     const API_URL = "__API_URL_SECRET__"; 
 </script>
 <script src="app.js"></script>
-    <!-- SEÇÃO DE CRÉDITOS (Monitorada pelo Anti-Fraude) -->
+
+<!-- SEÇÃO DE CRÉDITOS (Monitorada pelo Anti-Fraude) -->
 <footer id="creditos-dev" class="mt-5 pb-4 text-center">
     <div class="card shadow-sm border-0 bg-light" style="max-width: 600px; margin: 0 auto;">
         <div class="card-body py-3">
@@ -129,6 +151,6 @@
         </div>
     </div>
 </footer>
+
 </body>
 </html>
-
