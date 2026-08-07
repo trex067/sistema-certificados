@@ -3,8 +3,24 @@ let listaTSTs = [];
 let assinaturaDataUrl = null;
 
 // ==========================================
+// MODO ESCURO / CLARO (THEME TOGGLE)
+// ==========================================
+const themeToggleBtn = document.getElementById('themeToggle');
+const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+themeToggleBtn.addEventListener('click', () => {
+    let theme = document.documentElement.getAttribute('data-theme');
+    theme = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+});
+
+// ==========================================
 // 1. LEITURA DE EXCEL, SHEETS E CTRL+V
 // ==========================================
+
+// Via Arquivo Excel
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = e.target.files;
     for (let f = 0; f < files.length; f++) {
@@ -20,19 +36,55 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     }
 });
 
-function importarDoSheets() {
-    alert("Funcionalidade em desenvolvimento. Use a importação via Excel ou Ctrl+V.");
+// Via Link do Google Sheets
+async function importarDoSheets() {
+    const link = document.getElementById('linkSheets').value.trim();
+    if (!link) return alert("Por favor, cole o link da planilha.");
+    
+    // Extrai o ID da URL do Google Sheets
+    const match = link.match(/\/d\/(.*?)(\/|$)/);
+    if (!match) return alert("Link inválido. Certifique-se de colar a URL completa da planilha.");
+    
+    const id = match[1];
+    // URL nativa do Google para exportar a planilha pública como CSV
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`;
+
+    try {
+        document.getElementById('linkSheets').value = "Processando...";
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error("A planilha está bloqueada. Altere o compartilhamento para 'Qualquer pessoa com o link'.");
+        
+        const csvText = await response.text();
+        
+        // Separa as linhas e limpa as aspas do CSV
+        const linhas = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/(^"|"$)/g, '')));
+        
+        processarArrayMatriz(linhas);
+        document.getElementById('linkSheets').value = "";
+        alert("Dados puxados com sucesso!");
+    } catch (e) {
+        document.getElementById('linkSheets').value = "";
+        alert("Erro ao importar: " + e.message);
+    }
 }
 
-// Ouvinte de CTRL+V Global
+// Via CTRL+V (Paste) - Global
 document.addEventListener('paste', (e) => {
+    // Ignora se o usuário estiver colando texto dentro de um campo de digitação (input)
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
     let clipboardData = e.clipboardData || window.clipboardData;
     let pastedData = clipboardData.getData('Text');
+    if (!pastedData) return;
+
     const linhas = pastedData.split('\n').map(linha => linha.split('\t'));
     processarArrayMatriz(linhas);
 });
 
 function processarArrayMatriz(matriz) {
+    let adicionados = 0;
+    let duplicados = 0;
+
     for (let i = 1; i < matriz.length; i++) {
         const linha = matriz[i];
         if (!linha || linha.length < 3) continue;
@@ -42,20 +94,28 @@ function processarArrayMatriz(matriz) {
         let cpfBruto = linha[2] ? linha[2].toString().trim() : "";
         let cpfValidado = formatarEValidarCPF(cpfBruto);
 
-        // Bloqueia duplicados por CPF
+        if (!cpfValidado.valido) continue;
+
+        // Bloqueia duplicados verificando o CPF na lista existente
         let duplicado = listaFuncionarios.find(f => f.cpf === cpfValidado.cpfFormatado);
-        if (duplicado) continue;
+        if (duplicado) {
+            duplicados++;
+            continue;
+        }
 
         let dataAdm = converterData(linha[3]);
         
         listaFuncionarios.push({
-            id: Date.now() + i, // ID único para controle
+            id: Date.now() + i, // ID único para a linha
             codigo: cod,
             nome: nome,
-            cpf: cpfValidado.valido ? cpfValidado.cpfFormatado : "CPF INVÁLIDO",
+            cpf: cpfValidado.cpfFormatado,
             admissao: dataAdm
         });
+        adicionados++;
     }
+    
+    if (duplicados > 0) alert(`${duplicados} funcionário(s) ignorado(s) pois já estavam na lista.`);
     renderizarTabela();
 }
 
@@ -83,7 +143,7 @@ function excluirSelecionados() {
 }
 
 function limparTabela() {
-    if(confirm("Tem certeza que deseja apagar todos os funcionários da lista atual?")) {
+    if(confirm("Tem certeza que deseja apagar todos os funcionários da lista?")) {
         listaFuncionarios = [];
         document.getElementById('chkTodos').checked = false;
         renderizarTabela();
@@ -142,7 +202,6 @@ function renderizarTabela() {
     listaFuncionarios.forEach((f, index) => {
         const dataAdmFormatada = formataDataInput(f.admissao);
         
-        // Células editáveis
         tbody.innerHTML += `
             <tr>
                 <td><input type="checkbox" class="chk-row form-check-input" value="${f.id}"></td>
@@ -172,10 +231,9 @@ function adicionarTST() {
     const nrs = Array.from(document.querySelectorAll('.tst-nr:checked')).map(cb => cb.value);
     
     if (!nome || !reg) return alert("Preencha Nome e Registro do TST");
-    if (!reg.includes('/')) return alert("O Registro deve conter a UF (Ex: 000000/SP)");
+    if (!reg.includes('/')) return alert("O Registro deve conter a UF (Ex: 0000000/PR)");
     if (nrs.length === 0) return alert("Marque ao menos uma NR para este TST");
 
-    // Trava de NR Única
     for (let nr of nrs) {
         if (listaTSTs.find(t => t.nrs.includes(nr))) {
             return alert(`A ${nr} já está associada a outro TST na lista.`);
@@ -204,8 +262,8 @@ function limparTSTs() {
 function renderizarTSTs() {
     const div = document.getElementById('tstList');
     div.innerHTML = listaTSTs.map((tst, i) => `
-        <div class="alert alert-secondary d-flex justify-content-between align-items-center p-2 mb-2">
-            <div><strong>${tst.nome}</strong> (${tst.registro}) - Autorizado: <span class="badge bg-primary">${tst.nrs.join(', ')}</span></div>
+        <div class="alert alert-secondary d-flex justify-content-between align-items-center p-2 mb-2" style="background-color: var(--cor-input-bg); border-color: var(--cor-borda);">
+            <div style="color: var(--cor-texto);"><strong>${tst.nome}</strong> (${tst.registro}) - Autorizado: <span class="badge bg-primary">${tst.nrs.join(', ')}</span></div>
             <button class="btn btn-sm btn-outline-danger" onclick="excluirTST(${i})">🗑️ Remover</button>
         </div>
     `).join('');
@@ -223,14 +281,24 @@ function desenhar(e) {
     if (!desenhando) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX || e.touches[0].clientX) - rect.left;
-    const y = (e.clientY || e.touches[0].clientY) - rect.top;
-    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#000';
-    ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y);
+    const x = (e.clientX || e.touches && e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches && e.touches[0].clientY) - rect.top;
+    
+    // Cor da caneta dependendo do tema escuro/claro
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    ctx.strokeStyle = isDark ? '#ffffff' : '#000000';
+    
+    ctx.lineWidth = 2; 
+    ctx.lineCap = 'round';
+    ctx.lineTo(x, y); 
+    ctx.stroke(); 
+    ctx.beginPath(); 
+    ctx.moveTo(x, y);
 }
 canvas.addEventListener('mousedown', iniciarDesenho); canvas.addEventListener('mousemove', desenhar);
 canvas.addEventListener('mouseup', pararDesenho); canvas.addEventListener('mouseout', pararDesenho);
-canvas.addEventListener('touchstart', iniciarDesenho); canvas.addEventListener('touchmove', desenhar);
+canvas.addEventListener('touchstart', iniciarDesenho, {passive: false}); 
+canvas.addEventListener('touchmove', desenhar, {passive: false});
 canvas.addEventListener('touchend', pararDesenho);
 
 function limparAssinatura() {
@@ -239,7 +307,7 @@ function limparAssinatura() {
 }
 
 // ==========================================
-// 5. ENVIO E VALIDAÇÕES (API)
+// 5. VALIDAÇÕES (CPF/DATA) E ENVIO (API)
 // ==========================================
 function formatarEValidarCPF(valor) {
     if (!valor) return { valido: false };
@@ -262,7 +330,6 @@ function converterData(valor) {
 }
 
 async function gerarCertificados(destino) {
-    // Trava de Autoria Restrita
     const footer = document.getElementById('creditos-dev');
     if (!footer || !footer.innerHTML.includes('DDFR LTDA') || !footer.innerHTML.includes('C.A Segurança do Trabalho LTDA')) {
         document.body.innerHTML = `<h2 style='color:red; text-align:center; margin-top: 50px;'>⚠️ ACESSO BLOQUEADO - Direitos Autorais Violados.</h2>`;
@@ -271,7 +338,11 @@ async function gerarCertificados(destino) {
 
     if (listaFuncionarios.length === 0) return alert("Importe ou adicione funcionários na tabela.");
     
-    // Captura assinatura se houver
+    // NOTA: Se você não configurou o API_GAS_URL no GitHub Secrets e tentar rodar isso na sua máquina, vai dar erro "API_URL is not defined" ou "Failed to fetch".
+    if (typeof API_URL === 'undefined') {
+        return alert("O site não está conectado ao servidor do Google. Você precisa subir os arquivos para o GitHub para que o sistema injete a chave de acesso (API_GAS_URL).");
+    }
+
     if (canvasTocado) assinaturaDataUrl = canvas.toDataURL("image/png");
 
     const pacote = {
@@ -286,12 +357,9 @@ async function gerarCertificados(destino) {
         ['06', '12', '18', '35'].forEach(nr => {
             if (document.getElementById(`nr${nr}chk${i}`).checked) {
                 const dataBr = document.getElementById(`nr${nr}dt${i}`).value.split('-').reverse().join('/');
-                
-                // Valida se tem TST para essa NR
                 if (!listaTSTs.find(t => t.nrs.includes(`NR ${nr}`))) {
                     throw new Error(`Falta cadastrar um TST habilitado para a NR ${nr}.`);
                 }
-                
                 funcReq.nrs.push({ tipo: `NR ${nr}`, data: dataBr });
             }
         });
@@ -317,6 +385,6 @@ async function gerarCertificados(destino) {
         }
     } catch (error) {
         status.className = "mt-3 fw-bold text-center text-danger";
-        status.innerHTML = `❌ Falha: ${error.message}`;
+        status.innerHTML = `❌ Falha na conexão: ${error.message}`;
     }
 }
