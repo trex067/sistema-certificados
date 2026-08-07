@@ -7,6 +7,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        /* Ajuste para a tabela não espremer os dados */
+        .text-nowrap { white-space: nowrap !important; }
+        .col-min-width { min-width: 140px; }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -16,19 +21,14 @@
     </div>
 </nav>
 
-<div class="container my-4">
+<div class="container-fluid px-4 my-4">
     <!-- SEÇÃO 1: DADOS -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
         <div class="card-body">
-            
             <div class="d-flex mb-3">
-                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/export?format=xlsx" target="_blank" class="btn btn-outline-success btn-sm me-2">
-                    📥 Baixar Template (.xlsx)
-                </a>
-                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/copy" target="_blank" class="btn btn-outline-primary btn-sm">
-                    📄 Acessar Template (Google Sheets)
-                </a>
+                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/export?format=xlsx" target="_blank" class="btn btn-outline-success btn-sm me-2">📥 Baixar Template (.xlsx)</a>
+                <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/copy" target="_blank" class="btn btn-outline-primary btn-sm">📄 Acessar Template (Google Sheets)</a>
             </div>
             
             <ul class="nav nav-tabs" id="inputTab" role="tablist">
@@ -36,8 +36,6 @@
                 <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sheets">Importar Google Sheets</button></li>
             </ul>
             <div class="tab-content border border-top-0 p-3 bg-white">
-                
-                <!-- ABA EXCEL -->
                 <div class="tab-pane fade show active" id="tab-arquivo">
                     <label class="form-label text-muted">Selecione um ou mais arquivos Excel (.xlsx):</label>
                     <div class="input-group">
@@ -45,8 +43,6 @@
                         <button class="btn btn-success" onclick="importarArquivosExcel()">📥 Importar</button>
                     </div>
                 </div>
-
-                <!-- ABA GOOGLE SHEETS -->
                 <div class="tab-pane fade" id="tab-sheets">
                     <label class="form-label text-muted">Cole o link da sua planilha do Google Sheets:</label>
                     <div class="input-group">
@@ -55,32 +51,32 @@
                     </div>
                     <small class="text-danger">⚠️ A planilha no drive precisa estar configurada como "Qualquer pessoa com o link".</small>
                 </div>
-
             </div>
-
-            <!-- BOTÃO DE LIMPEZA -->
             <div class="mt-3 text-end">
-                <button class="btn btn-outline-danger btn-sm" onclick="limparLista()">🗑️ Limpar Lista Atual e Começar do Zero</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="limparLista()">🗑️ Limpar Lista Atual</button>
             </div>
         </div>
     </div>
 
-    <!-- SEÇÃO 2: SELEÇÃO E DATAS (Trazido para cima) -->
+    <!-- SEÇÃO 2: SELEÇÃO E DATAS -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-white text-construtora fw-bold">2. Funcionários e NRs (Revise e Ajuste)</div>
         <div class="card-body">
             <div class="alert alert-info py-2" role="alert" style="font-size: 0.95rem;">
-                💡 <strong>Agilidade:</strong> Você também pode copiar as colunas no Excel e apertar <strong>CTRL + V</strong> em qualquer lugar desta página para adicionar funcionários manualmente à lista abaixo!
+                💡 <strong>Agilidade:</strong> Você também pode copiar as colunas no Excel e apertar <strong>CTRL + V</strong> nesta página para adicionar manualmente!
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-light">
+                    <thead class="table-light text-nowrap">
                         <tr>
-                            <th>Cód</th><th>Nome</th><th>CPF</th><th>Admissão</th>
-                            <th>Gerar NR 06<br><small>Data</small></th>
-                            <th>Gerar NR 12<br><small>Data</small></th>
-                            <th>Gerar NR 18<br><small>Data</small></th>
-                            <th>Gerar NR 35<br><small>Data</small></th>
+                            <th>Cód</th>
+                            <th class="col-min-width">Nome</th>
+                            <th>CPF</th>
+                            <th>Admissão</th>
+                            <th class="col-min-width">Gerar NR 06<br><small>Data</small></th>
+                            <th class="col-min-width">Gerar NR 12<br><small>Data</small></th>
+                            <th class="col-min-width">Gerar NR 18<br><small>Data</small></th>
+                            <th class="col-min-width">Gerar NR 35<br><small>Data</small></th>
                         </tr>
                     </thead>
                     <tbody id="funcTableBody">
@@ -91,22 +87,38 @@
         </div>
     </div>
 
-    <!-- SEÇÃO 3: TSTs (Movido para baixo) -->
+    <!-- SEÇÃO 3: TSTs (Com Assinatura Digital) -->
     <div class="card mb-4 shadow-sm">
         <div class="card-header bg-white text-construtora fw-bold">3. Cadastrar Técnicos de Segurança (TST)</div>
         <div class="card-body">
-            <div class="row g-2 align-items-center">
-                <div class="col-md-3"><input type="text" id="tstNome" class="form-control" placeholder="Nome Completo"></div>
-                <div class="col-md-3"><input type="text" id="tstReg" class="form-control" placeholder="Nº de Registro"></div>
+            <div class="row g-3 align-items-start">
+                <div class="col-md-3">
+                    <input type="text" id="tstNome" class="form-control text-uppercase" placeholder="Nome Completo (Obrigatório)">
+                    <input type="text" id="tstReg" class="form-control mt-2" placeholder="Nº de Registro (Obrigatório)">
+                </div>
                 <div class="col-md-4">
+                    <label class="form-label fw-bold mb-1">Normas que este TST pode assinar (Marque ao menos 1):</label><br>
                     <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 06"> NR 06</div>
                     <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 12"> NR 12</div>
                     <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 18"> NR 18</div>
                     <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 35"> NR 35</div>
                 </div>
-                <div class="col-md-2"><button class="btn btn-construtora w-100" onclick="adicionarTST()">Adicionar</button></div>
+                <div class="col-md-3 text-center">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" id="chkAssinatura" onchange="toggleAssinatura()">
+                        <label class="form-check-label fw-bold" for="chkAssinatura">Incluir Assinatura Digital</label>
+                    </div>
+                    <div id="boxAssinatura" style="display: none;">
+                        <canvas id="canvasAssinatura" width="250" height="80" style="border:1px dashed #0A3A66; background:#f8f9fa; cursor:crosshair; border-radius: 4px;"></canvas>
+                        <br><button class="btn btn-sm btn-link text-danger p-0" onclick="limparCanvas()">Limpar Assinatura</button>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-construtora w-100" id="btnSalvarTST" onclick="adicionarTST()">Adicionar TST</button>
+                </div>
             </div>
-            <div id="tstList" class="mt-3"></div>
+            <hr>
+            <div id="tstList" class="mt-2"></div>
         </div>
     </div>
 
@@ -129,31 +141,21 @@
     </div>
 </div>
 
-<!-- Cole esta linha aqui para o Bootstrap funcionar -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    // A mágica do GitHub Actions vai substituir a string abaixo pela URL real antes de publicar!
     const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec"; 
+    const TEMPLATE_ID = "__TEMPLATE_SECRET__"; 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="app.js"></script>
 
-<!-- SEÇÃO DE CRÉDITOS (Monitorada pelo Anti-Fraude) -->
 <footer id="creditos-dev" class="mt-5 pb-4 text-center">
     <div class="card shadow-sm border-0 bg-light" style="max-width: 600px; margin: 0 auto;">
         <div class="card-body py-3">
-            <p class="mb-1 text-muted" style="font-size: 0.9rem;">
-                🚧 <strong>Portal Automático de Certificados NR</strong>
-            </p>
-            <p class="mb-0 text-muted" style="font-size: 0.85rem;">
-                Desenvolvido por <strong>Eng. Daniel Filipe Rosa</strong> e <strong>TST Caroline Ávila</strong>
-            </p>
-            <a href="https://instagram.com/eng.daniel.filipe" target="_blank" class="text-decoration-none mt-1 d-inline-block" style="color: var(--cor-secundaria); font-weight: 600; font-size: 0.85rem;">
-                🔗 @eng.daniel.filipe
-            </a>
+            <p class="mb-1 text-muted" style="font-size: 0.9rem;">🚧 <strong>Portal Automático de Certificados NR</strong></p>
+            <p class="mb-0 text-muted" style="font-size: 0.85rem;">Desenvolvido por <strong>Eng. Daniel Filipe Rosa</strong> e <strong>TST Caroline Ávila</strong></p>
+            <a href="https://instagram.com/eng.daniel.filipe" target="_blank" class="text-decoration-none mt-1 d-inline-block" style="color: var(--cor-secundaria); font-weight: 600; font-size: 0.85rem;">🔗 @eng.daniel.filipe</a>
         </div>
     </div>
 </footer>
-
 </body>
 </html>
