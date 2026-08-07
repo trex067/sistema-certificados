@@ -1,4 +1,4 @@
-const API_URL = "API_URL_SECRET";
+const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec";
 let listaFuncionarios = [];
 let listaTSTs = [];
 let assinaturaDataUrl = null;
