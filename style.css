@@ -1,0 +1,26 @@
+/* Variáveis de cores da construtora - Altere conforme a marca */
+:root {
+    --cor-primaria: #0A3A66; /* Azul escuro corporativo */
+    --cor-secundaria: #F29F05; /* Amarelo/Laranja Construtora */
+}
+
+.bg-construtora {
+    background-color: var(--cor-primaria) !important;
+}
+.text-construtora {
+    color: var(--cor-primaria) !important;
+}
+.btn-construtora {
+    background-color: var(--cor-secundaria);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+}
+.btn-construtora:hover {
+    background-color: #d18a04;
+    color: #fff;
+}
+.form-check-input:checked {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+}
