@@ -9,84 +9,72 @@ const ctx = canvas ? canvas.getContext('2d') : null;
 let desenhando = false;
 
 if (canvas) {
-    // Eventos de Mouse
+    if(ctx) { ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000000'; }
+
     canvas.addEventListener('mousedown', (e) => { desenhando = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
     canvas.addEventListener('mousemove', (e) => { if (desenhando) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
     canvas.addEventListener('mouseup', () => desenhando = false);
     canvas.addEventListener('mouseout', () => desenhando = false);
     
-    // Eventos de Touch (Celular/Tablet)
+    // Tratamento responsivo para Touch (Mobile)
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault(); desenhando = true;
         const rect = canvas.getBoundingClientRect();
-        ctx.beginPath(); ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-    });
+        // Corrige o scale caso a tela seja redimensionada
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        ctx.beginPath(); 
+        ctx.moveTo((e.touches[0].clientX - rect.left) * scaleX, (e.touches[0].clientY - rect.top) * scaleY);
+    }, {passive: false});
+    
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
         if (desenhando) {
             const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            ctx.lineTo((e.touches[0].clientX - rect.left) * scaleX, (e.touches[0].clientY - rect.top) * scaleY);
             ctx.stroke();
         }
-    });
+    }, {passive: false});
     canvas.addEventListener('touchend', () => desenhando = false);
 }
 
-function toggleAssinatura() {
-    document.getElementById('boxAssinatura').style.display = document.getElementById('chkAssinatura').checked ? 'block' : 'none';
-}
-function limparCanvas() {
-    if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
+function toggleAssinatura() { document.getElementById('boxAssinatura').style.display = document.getElementById('chkAssinatura').checked ? 'block' : 'none'; }
+function limparCanvas() { if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
 // ==========================================
-// 1. IMPORTAÇÃO E HIGIENIZAÇÃO DE DADOS
+// 1. IMPORTAÇÃO DE DADOS
 // ==========================================
 async function importarArquivosExcel() {
     const input = document.getElementById('fileInput');
     if (input.files.length === 0) return alert("Selecione pelo menos um arquivo Excel.");
-    
-    const btn = document.querySelector('#tab-arquivo button');
-    const txtOriginal = btn.innerHTML;
-    btn.innerHTML = "⏳ Processando..."; btn.disabled = true;
-
     let totalAdicionados = 0, totalDuplicados = 0, totalIgnorados = 0;
-
     for (let i = 0; i < input.files.length; i++) {
         await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const data = new Uint8Array(evt.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-                const res = processarDados(json, false);
-                totalAdicionados += res.adicionados; totalDuplicados += res.duplicados; totalIgnorados += res.ignorados;
-                resolve();
+                const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+                const res = processarDados(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1}), false);
+                totalAdicionados += res.adicionados; totalDuplicados += res.duplicados; totalIgnorados += res.ignorados; resolve();
             };
             reader.readAsArrayBuffer(input.files[i]);
         });
     }
-    btn.innerHTML = txtOriginal; btn.disabled = false; input.value = '';
+    input.value = '';
     alert(`Leitura concluída!\n✅ ${totalAdicionados} adicionados\n🔁 ${totalDuplicados} duplicados\n⚠️ ${totalIgnorados} inválidos`);
 }
 
 async function importarGoogleSheets() {
     const match = document.getElementById('sheetsLink').value.match(/\/d\/(.*?)(\/|$)/);
     if (!match) return alert("Link inválido.");
-    
     const btn = document.querySelector('#tab-sheets button');
-    const txtOriginal = btn.innerHTML;
-    btn.innerHTML = "⏳ Baixando..."; btn.disabled = true;
-
+    const txtOriginal = btn.innerHTML; btn.innerHTML = "⏳ Baixando..."; btn.disabled = true;
     try {
         const response = await fetch(`https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`);
         if (!response.ok) throw new Error("A planilha não está pública.");
-        
-        const arrayBuffer = await response.arrayBuffer();
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-        
-        const res = processarDados(json, false);
+        const workbook = XLSX.read(await response.arrayBuffer(), { type: 'array' });
+        const res = processarDados(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1}), false);
         document.getElementById('sheetsLink').value = '';
         alert(`Sucesso!\n✅ ${res.adicionados} adicionados\n🔁 ${res.duplicados} duplicados ignorados`);
     } catch(error) { alert(`⚠️ Erro: ${error.message}`); } 
@@ -99,7 +87,7 @@ document.addEventListener('paste', function(e) {
     if (pastedData && pastedData.includes('\t')) {
         e.preventDefault();
         const res = processarDados(pastedData.split('\n').map(linha => linha.split('\t')), false);
-        alert(`✅ ${res.adicionados} adicionados\n🔁 ${res.duplicados} duplicados`);
+        alert(`Dados Colados!\n✅ ${res.adicionados} adicionados\n🔁 ${res.duplicados} duplicados`);
     }
 });
 
@@ -108,34 +96,23 @@ function processarDados(matriz, exibirAlerta = true) {
     for (let i = 0; i < matriz.length; i++) {
         const linha = matriz[i];
         if (!linha || linha.length < 3) continue;
-
         let cpfBruto = linha[2] ? linha[2].toString().trim() : "";
         if (cpfBruto.toLowerCase() === "cpf" || (linha[1] && linha[1].toString().toLowerCase() === "nome")) continue;
-
         let cpfValidado = formatarEValidarCPF(cpfBruto);
         if (!cpfValidado.valido) { ignorados++; continue; }
         if (listaFuncionarios.find(f => f.cpf === cpfValidado.cpfFormatado)) { duplicados++; continue; }
-
-        listaFuncionarios.push({
-            codigo: linha[0] || "",
-            nome: linha[1] ? linha[1].toString().toUpperCase().trim() : "", // Padroniza Maiúsculo
-            cpf: cpfValidado.cpfFormatado,
-            admissao: converterData(linha[3])
-        });
+        listaFuncionarios.push({ codigo: linha[0] || "", nome: linha[1] ? linha[1].toString().toUpperCase().trim() : "", cpf: cpfValidado.cpfFormatado, admissao: converterData(linha[3]) });
         adicionados++;
     }
-    renderizarTabela();
-    return { adicionados, duplicados, ignorados };
+    renderizarTabela(); return { adicionados, duplicados, ignorados };
 }
 
 function limparLista() {
-    if (listaFuncionarios.length > 0 && confirm("🚨 Apagar todos os funcionários atuais da tela?")) {
-        listaFuncionarios = []; renderizarTabela();
-    }
+    if (listaFuncionarios.length > 0 && confirm("🚨 Apagar todos os funcionários atuais da tela?")) { listaFuncionarios = []; renderizarTabela(); }
 }
 
 // ==========================================
-// 2. FUNÇÕES ÚTEIS E FORMATAÇÃO
+// 2. FUNÇÕES ÚTEIS
 // ==========================================
 function formatarEValidarCPF(valor) {
     if (!valor) return { valido: false };
@@ -156,10 +133,8 @@ function converterData(v) {
         const p = s.split('/');
         if (p.length === 3) return new Date(p[2].split(' ')[0], p[1] - 1, p[0]);
     }
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? new Date() : d;
+    const d = new Date(s); return isNaN(d.getTime()) ? new Date() : d;
 }
-
 function addDiasUteis(data, dias) {
     let d = new Date(data); let count = 0;
     while (count < dias) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) count++; }
@@ -172,54 +147,43 @@ function formataDataInput(data) { return data.toISOString().split('T')[0]; }
 // ==========================================
 function renderizarTabela() {
     const tbody = document.getElementById('funcTableBody');
-    if (listaFuncionarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Nenhum dado importado</td></tr>';
-        return;
-    }
+    if (listaFuncionarios.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5 fs-5">Nenhum dado importado.</td></tr>'; return; }
     tbody.innerHTML = '';
     listaFuncionarios.forEach((f, i) => {
         const d0618 = addDiasUteis(f.admissao, 1), d12 = addDiasUteis(d0618, 1), d35 = addDiasUteis(f.admissao, 10);
-        tbody.innerHTML += `
-            <tr>
-                <td>${f.codigo}</td>
-                <td class="text-nowrap fw-bold">${f.nome}</td>
-                <td class="text-nowrap">${f.cpf}</td>
-                <td class="text-nowrap">${f.admissao.toLocaleDateString('pt-BR')}</td>
-                <td><input type="checkbox" id="nr06_chk_${i}"> <input type="date" id="nr06_dt_${i}" value="${formataDataInput(d0618)}" class="form-control form-control-sm mt-1" min="${formataDataInput(f.admissao)}"></td>
-                <td><input type="checkbox" id="nr12_chk_${i}"> <input type="date" id="nr12_dt_${i}" value="${formataDataInput(d12)}" class="form-control form-control-sm mt-1" min="${formataDataInput(f.admissao)}"></td>
-                <td><input type="checkbox" id="nr18_chk_${i}"> <input type="date" id="nr18_dt_${i}" value="${formataDataInput(d0618)}" class="form-control form-control-sm mt-1" min="${formataDataInput(f.admissao)}"></td>
-                <td><input type="checkbox" id="nr35_chk_${i}"> <input type="date" id="nr35_dt_${i}" value="${formataDataInput(d35)}" class="form-control form-control-sm mt-1" min="${formataDataInput(f.admissao)}"></td>
-            </tr>`;
+        tbody.innerHTML += `<tr>
+            <td class="fw-bold">${f.codigo}</td>
+            <td class="text-nowrap fw-bold">${f.nome}</td>
+            <td class="text-nowrap">${f.cpf}</td>
+            <td class="text-nowrap">${f.admissao.toLocaleDateString('pt-BR')}</td>
+            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr06_chk_${i}"></div><input type="date" id="nr06_dt_${i}" value="${formataDataInput(d0618)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
+            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr12_chk_${i}"></div><input type="date" id="nr12_dt_${i}" value="${formataDataInput(d12)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
+            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr18_chk_${i}"></div><input type="date" id="nr18_dt_${i}" value="${formataDataInput(d0618)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
+            <td><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="nr35_chk_${i}"></div><input type="date" id="nr35_dt_${i}" value="${formataDataInput(d35)}" class="form-control mt-1" min="${formataDataInput(f.admissao)}"></td>
+        </tr>`;
     });
 }
 
 // ==========================================
-// 4. GESTÃO DE TSTs (Validação e Edição)
+// 4. GESTÃO DE TSTs
 // ==========================================
 function adicionarTST() {
     const nome = document.getElementById('tstNome').value.toUpperCase().trim();
     const reg = document.getElementById('tstReg').value.trim();
     const nrs = Array.from(document.querySelectorAll('.tst-nr:checked')).map(cb => cb.value);
     
-    // Travas de Preenchimento Obrigatório
-    if (!nome) return alert("❌ Você deve preencher o Nome Completo do TST.");
-    if (!reg) return alert("❌ Você deve preencher o Nº de Registro do TST.");
-    if (nrs.length === 0) return alert("❌ O TST precisa estar apto a assinar pelo menos 1 NR. Marque uma opção.");
+    if (!nome) return alert("❌ Preencha o Nome Completo do TST.");
+    if (!reg) return alert("❌ Preencha o Nº de Registro do TST.");
+    if (nrs.length === 0) return alert("❌ Marque pelo menos 1 NR habilitada para este TST.");
     
     let assinatura = null;
-    if (document.getElementById('chkAssinatura').checked && canvas) {
-        // Pega a imagem do canvas em Base64
-        assinatura = canvas.toDataURL('image/png');
-    }
+    if (document.getElementById('chkAssinatura').checked && canvas) assinatura = canvas.toDataURL('image/png');
 
     listaTSTs.push({ nome, registro: reg, nrs, assinatura });
     
-    // Limpar campos
     document.getElementById('tstNome').value = ''; document.getElementById('tstReg').value = '';
     document.querySelectorAll('.tst-nr').forEach(cb => cb.checked = false);
-    document.getElementById('chkAssinatura').checked = false;
-    toggleAssinatura(); limparCanvas();
-    
+    document.getElementById('chkAssinatura').checked = false; toggleAssinatura(); limparCanvas();
     atualizarListaTST();
 }
 
@@ -228,47 +192,42 @@ function editarTST(index) {
     document.getElementById('tstNome').value = t.nome;
     document.getElementById('tstReg').value = t.registro;
     document.querySelectorAll('.tst-nr').forEach(cb => { cb.checked = t.nrs.includes(cb.value); });
-    
-    // Remove da lista para ser readicionado após edição
-    listaTSTs.splice(index, 1);
-    atualizarListaTST();
-    document.getElementById('tstNome').focus();
+    listaTSTs.splice(index, 1); atualizarListaTST(); document.getElementById('tstNome').focus();
 }
 
 function atualizarListaTST() {
-    const div = document.getElementById('tstList');
-    div.innerHTML = listaTSTs.map((t, i) => `
-        <span class="badge bg-secondary p-2 mb-2 me-2 fs-6">
-            ${t.nome} (Reg: ${t.registro}) | Apto: ${t.nrs.join(', ')}
-            ${t.assinatura ? ' 🖋️' : ''}
-            <button class="btn btn-sm btn-light ms-2 py-0 px-1 text-primary" onclick="editarTST(${i})">✏️ Editar</button>
-            <button class="btn btn-sm btn-light ms-1 py-0 px-1 text-danger" onclick="listaTSTs.splice(${i}, 1); atualizarListaTST();">✖</button>
-        </span>`).join('');
+    document.getElementById('tstList').innerHTML = listaTSTs.map((t, i) => `
+        <div class="badge bg-secondary p-3 d-flex align-items-center flex-column flex-md-row fs-6">
+            <span>👤 ${t.nome} (${t.registro}) <br class="d-md-none"> 📌 NRs: ${t.nrs.join(', ')} ${t.assinatura ? '🖋️' : ''}</span>
+            <div class="mt-2 mt-md-0 ms-md-3">
+                <button class="btn btn-sm btn-light text-primary py-0" onclick="editarTST(${i})">✏️ Editar</button>
+                <button class="btn btn-sm btn-light text-danger py-0" onclick="listaTSTs.splice(${i}, 1); atualizarListaTST();">✖ Remover</button>
+            </div>
+        </div>`).join('');
 }
 
 // ==========================================
-// 5. ENVIO E INTEGRAÇÃO (Pre-Flight Checks)
+// 5. INTEGRAÇÃO E ENVIO (Sem Template Secreto)
 // ==========================================
 async function gerarCertificados(destino) {
     const footer = document.getElementById('creditos-dev');
     if (!footer || !footer.innerHTML.includes('Daniel Filipe Rosa') || !footer.innerHTML.includes('Caroline Ávila')) {
-        document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#f8d7da; color:#721c24; flex-direction:column; text-align:center;">
-            <h1>⚠️ ACESSO BLOQUEADO</h1><h3>Violação de Direitos Autorais.</h3></div>`;
+        document.body.innerHTML = `<div style="display:flex; height:100vh; align-items:center; justify-content:center; background-color:#111; color:#FF8C00; flex-direction:column; text-align:center;">
+            <h1>⚠️ ACESSO BLOQUEADO</h1><h3>Violação de Autoria.</h3></div>`;
         return; 
     }
 
     if (listaFuncionarios.length === 0) return alert("Importe os funcionários primeiro.");
     
-    const pacote = { destino: destino, templateId: TEMPLATE_ID, emails: document.getElementById('emailsDestino').value.split(',').map(e=>e.trim()).filter(e=>e), tsts: listaTSTs, funcionarios: [] };
+    // O Template não é mais enviado no pacote. O Google Apps Script vai ler direto da planilha!
+    const pacote = { destino: destino, emails: document.getElementById('emailsDestino').value.split(',').map(e=>e.trim()).filter(e=>e), tsts: listaTSTs, funcionarios: [] };
 
     let nrsRequisitadas = new Set();
-
     listaFuncionarios.forEach((f, i) => {
         let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [] };
         ['06', '12', '18', '35'].forEach(nr => {
             if (document.getElementById(`nr${nr}_chk_${i}`).checked) {
-                const dataBr = document.getElementById(`nr${nr}_dt_${i}`).value.split('-').reverse().join('/');
-                funcReq.nrs.push({ tipo: `NR ${nr}`, data: dataBr });
+                funcReq.nrs.push({ tipo: `NR ${nr}`, data: document.getElementById(`nr${nr}_dt_${i}`).value.split('-').reverse().join('/') });
                 nrsRequisitadas.add(`NR ${nr}`);
             }
         });
@@ -277,33 +236,28 @@ async function gerarCertificados(destino) {
 
     if (pacote.funcionarios.length === 0) return alert("⚠️ Nenhuma NR foi marcada para nenhum funcionário.");
 
-    // TRAVA DE SEGURANÇA: Validar se as NRs requisitadas possuem TSTs correspondentes
     let nrsCobertas = new Set();
     listaTSTs.forEach(tst => tst.nrs.forEach(nr => nrsCobertas.add(nr)));
-    
     for (let nrNecessaria of nrsRequisitadas) {
-        if (!nrsCobertas.has(nrNecessaria)) {
-            return alert(`🚨 GERAÇÃO BLOQUEADA!\n\nVocê solicitou certificados da ${nrNecessaria}, mas não há nenhum Técnico de Segurança (TST) cadastrado e apto a ministrar essa norma.\n\nPor favor, cadastre um TST para a ${nrNecessaria} ou desmarque os certificados dessa norma.`);
-        }
+        if (!nrsCobertas.has(nrNecessaria)) return alert(`🚨 GERAÇÃO BLOQUEADA!\nFalta um TST habilitado para a norma: ${nrNecessaria}`);
     }
 
-    // Processo de envio visual
     const btnZip = document.getElementById('btnZip'); const btnEmail = document.getElementById('btnEmail'); const status = document.getElementById('statusProcessamento');
     btnZip.disabled = true; btnEmail.disabled = true;
-    status.innerHTML = `<span class="spinner-border spinner-border-sm text-primary"></span> Gerando documentos... Aguarde.`;
-    status.className = "mt-3 fw-bold text-center text-primary";
+    status.innerHTML = `<span class="spinner-border spinner-border-sm" style="color: var(--piacentini-orange);"></span> Gerando documentos na Nuvem...`;
+    status.style.color = 'var(--piacentini-orange)';
 
     try {
         const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pacote) });
         const result = await response.json();
         if (result.sucesso) {
-            status.className = "mt-3 fw-bold text-center text-success";
-            status.innerHTML = `✅ Sucesso! ${result.total} certificados gerados.`;
-            if (destino === 'ZIP' && result.link) status.innerHTML += `<br><br><a href="${result.link}" target="_blank" class="btn btn-success btn-lg">📥 CLIQUE AQUI PARA BAIXAR O ZIP</a>`;
+            status.className = "mt-4 fs-5 fw-bold text-center text-success";
+            status.innerHTML = `✅ ${result.total} certificados gerados.`;
+            if (destino === 'ZIP' && result.link) status.innerHTML += `<br><br><a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold">📥 BAIXAR ARQUIVO ZIP</a>`;
         } else throw new Error(result.erro);
     } catch (error) {
-        status.className = "mt-3 fw-bold text-center text-danger";
-        status.innerHTML = `❌ Erro: ${error.message}`;
+        status.className = "mt-4 fs-5 fw-bold text-center text-danger";
+        status.innerHTML = `❌ Erro do Servidor: ${error.message}`;
     }
     btnZip.disabled = false; btnEmail.disabled = false;
 }
