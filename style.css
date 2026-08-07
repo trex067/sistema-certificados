@@ -4,23 +4,23 @@
 :root {
     --cor-primaria: #ff6600; /* Laranja Piacentini */
     --cor-secundaria: #343a40; /* Chumbo */
-    --cor-fundo: #f8f9fa;
+    --cor-fundo: #e9ecef; /* Cinza suave para dar contraste com os quadros brancos */
     --cor-texto: #212529;
     --cor-card: #ffffff;
-    --cor-borda: #dee2e6;
+    --cor-borda: #ced4da;
     --cor-input-bg: #ffffff;
     --cor-input-text: #212529;
 }
 
 [data-theme="dark"] {
-    --cor-primaria: #ff8533; /* Laranja mais suave para telas escuras */
+    --cor-primaria: #ff8533; 
     --cor-secundaria: #f8f9fa;
-    --cor-fundo: #121212;
+    --cor-fundo: #121212; /* Fundo geral bem escuro */
     --cor-texto: #e0e0e0;
-    --cor-card: #1e1e1e;
-    --cor-borda: #333333;
-    --cor-input-bg: #2d2d2d;
-    --cor-input-text: #e0e0e0;
+    --cor-card: #1e1e1e; /* Quadros ligeiramente mais claros que o fundo */
+    --cor-borda: #495057; /* Bordas visíveis no escuro */
+    --cor-input-bg: #2b2b2b; /* Fundo do input diferente do fundo do quadro */
+    --cor-input-text: #ffffff;
 }
 
 body {
@@ -30,26 +30,29 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Modo Escuro - Elementos Globais */
-.text-muted { color: #a0a0a0 !important; }
+/* Fix text readability in dark mode */
+.text-muted { color: #adb5bd !important; }
 h2, h5 { color: var(--cor-secundaria) !important; }
 
-/* Botão de Trocar Tema */
+/* Botão de Trocar Tema (Lua/Sol) */
 .theme-toggle {
     cursor: pointer;
-    font-size: 1.5rem;
-    background: none;
-    border: none;
-    color: var(--cor-secundaria);
-    transition: transform 0.2s;
+    background: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+    color: var(--cor-texto);
+    border-radius: 50px;
+    padding: 5px 15px;
+    font-size: 1.2rem;
+    transition: transform 0.2s, background 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.theme-toggle:hover { transform: scale(1.1); }
+.theme-toggle:hover { transform: scale(1.05); }
 
 /* Painéis e Cards */
 .card-custom {
     background-color: var(--cor-card);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     border-top: 4px solid var(--cor-primaria);
     margin-bottom: 2rem;
     transition: background-color 0.3s;
@@ -59,7 +62,7 @@ h2, h5 { color: var(--cor-secundaria) !important; }
 .form-control, .form-select {
     background-color: var(--cor-input-bg);
     color: var(--cor-input-text);
-    border-color: var(--cor-borda);
+    border: 1px solid var(--cor-borda);
 }
 .form-control:focus {
     background-color: var(--cor-input-bg);
@@ -75,10 +78,10 @@ h2, h5 { color: var(--cor-secundaria) !important; }
     vertical-align: middle;
 }
 .table-hover tbody tr:hover {
-    background-color: rgba(255, 102, 0, 0.05) !important;
+    background-color: rgba(255, 102, 0, 0.08) !important;
 }
 
-/* Correção dos textos cortados nas células */
+/* Correção dos textos nas células */
 .col-codigo { min-width: 90px; font-weight: bold;}
 .col-nome { min-width: 250px; white-space: normal; } 
 .col-cpf { min-width: 140px; }
@@ -94,7 +97,7 @@ h2, h5 { color: var(--cor-secundaria) !important; }
 
 /* Rodapé e Créditos */
 .footer-creditos {
-    background-color: #343a40; /* Mantém escuro em ambos os temas */
+    background-color: #1a1d20; /* Mantém escuro e legível em ambos os temas */
     color: #ffffff;
     padding: 20px;
     border-radius: 8px;
@@ -108,7 +111,7 @@ h2, h5 { color: var(--cor-secundaria) !important; }
 #canvasAssinatura {
     border: 2px dashed var(--cor-borda);
     border-radius: 8px;
-    background: #fff;
+    background: var(--cor-input-bg);
     cursor: crosshair;
     touch-action: none;
 }
