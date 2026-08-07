@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Certificados - Construtora</title>
+    <!-- Usando Bootstrap para um layout profissional rápido -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- SheetJS para ler Excel localmente no navegador -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-construtora shadow-sm">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">🚧 Portal de Certificados NR</span>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <!-- SEÇÃO 1: DADOS -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white text-construtora fw-bold">1. Inserir Dados dos Funcionários</div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-3">
+                <a href="COLOQUE_AQUI_O_LINK_DO_SEU_TEMPLATE_DO_DRIVE" target="_blank" class="btn btn-outline-secondary btn-sm">📄 Baixar/Acessar Template Padrão</a>
+            </div>
+            
+            <ul class="nav nav-tabs" id="inputTab" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-arquivo">Importar Excel</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-colar">Colar Dados</button></li>
+            </ul>
+            <div class="tab-content border border-top-0 p-3 bg-white">
+                <div class="tab-pane fade show active" id="tab-arquivo">
+                    <input class="form-control" type="file" id="fileInput" accept=".xlsx, .xls">
+                </div>
+                <div class="tab-pane fade" id="tab-colar">
+                    <textarea id="pasteInput" class="form-control" rows="4" placeholder="Cole aqui os dados copiados do Excel (CÓDIGO | NOME | CPF | DATA ADMISSÃO)"></textarea>
+                    <button class="btn btn-primary mt-2" onclick="processarTextoColado()">Processar Texto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 2: TSTs -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white text-construtora fw-bold">2. Cadastrar Técnicos de Segurança (TST)</div>
+        <div class="card-body">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-3"><input type="text" id="tstNome" class="form-control" placeholder="Nome Completo"></div>
+                <div class="col-md-3"><input type="text" id="tstReg" class="form-control" placeholder="Nº de Registro"></div>
+                <div class="col-md-4">
+                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 06"> NR 06</div>
+                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 12"> NR 12</div>
+                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 18"> NR 18</div>
+                    <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 35"> NR 35</div>
+                </div>
+                <div class="col-md-2"><button class="btn btn-construtora w-100" onclick="adicionarTST()">Adicionar</button></div>
+            </div>
+            <div id="tstList" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 3: SELEÇÃO E DATAS -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white text-construtora fw-bold">3. Funcionários e NRs (Revise e Ajuste)</div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cód</th><th>Nome</th><th>CPF</th><th>Admissão</th>
+                        <th>Gerar NR 06<br><small>Data</small></th>
+                        <th>Gerar NR 12<br><small>Data</small></th>
+                        <th>Gerar NR 18<br><small>Data</small></th>
+                        <th>Gerar NR 35<br><small>Data</small></th>
+                    </tr>
+                </thead>
+                <tbody id="funcTableBody">
+                    <tr><td colspan="8" class="text-center text-muted">Importe dados para visualizar</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 4: GERAÇÃO -->
+    <div class="card mb-4 border-primary">
+        <div class="card-body bg-light">
+            <h5 class="card-title text-primary">Finalizar e Gerar</h5>
+            <div class="row align-items-end">
+                <div class="col-md-6">
+                    <label>E-mails para recebimento (separados por vírgula):</label>
+                    <input type="text" id="emailsDestino" class="form-control" placeholder="engenharia@empresa.com, rh@empresa.com">
+                </div>
+                <div class="col-md-6 text-end mt-3 mt-md-0">
+                    <button class="btn btn-outline-primary me-2" onclick="gerarCertificados('ZIP')" id="btnZip">📦 Baixar tudo em .ZIP</button>
+                    <button class="btn btn-primary" onclick="gerarCertificados('EMAIL')" id="btnEmail">✉️ Enviar por E-mail</button>
+                </div>
+            </div>
+            <div id="statusProcessamento" class="mt-3 fw-bold text-center"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // A mágica do GitHub Actions vai substituir a string abaixo pela URL real antes de publicar!
+    const API_URL = ""; 
+</script>
+<script src="app.js"></script>
+</body>
+</html>
