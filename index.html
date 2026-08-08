@@ -13,30 +13,21 @@
 <div class="container py-4">
     
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-        <div>
-            <img id="logoEmpresa" src="COLE_O_LINK_DA_SUA_LOGO_AQUI.png" alt="Logo da Empresa" style="max-height: 80px; display: none;">
-        </div>
+        <div><img id="logoEmpresa" src="COLE_O_LINK_DA_SUA_LOGO_AQUI.png" alt="Logo da Empresa" style="max-height: 80px; display: none;"></div>
         <h2 class="fw-bold text-center flex-grow-1 mt-2 mt-md-0" style="color: var(--cor-secundaria);">🚧 PORTAL AUTOMÁTICO DE CERTIFICADOS NR</h2>
         <button id="themeToggle" class="theme-toggle" title="Alternar Tema (Claro/Escuro)">🌙 Escuro</button>
     </div>
 
     <div class="card-custom p-4">
         <h5 class="fw-bold mb-3">1. BASE DE COLABORADORES (IMPORTAÇÃO)</h5>
-        
         <div class="mb-3">
             <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/export?format=xlsx" target="_blank" class="btn btn-outline-success btn-sm me-2 fw-bold">📊 Baixar Template (.xlsx)</a>
             <a href="https://docs.google.com/spreadsheets/d/19aMr3QonUw5O0Tj4b7R9dAciwwsLpb80/copy" target="_blank" class="btn btn-outline-primary btn-sm fw-bold">📄 Acessar Template (Drive)</a>
         </div>
-        
         <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold" id="pills-excel-tab" data-bs-toggle="pill" data-bs-target="#pills-excel" type="button" role="tab">📂 Importar Excel</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold" id="pills-sheets-tab" data-bs-toggle="pill" data-bs-target="#pills-sheets" type="button" role="tab">☁️ Importar Google Sheets</button>
-            </li>
+            <li class="nav-item" role="presentation"><button class="nav-link active fw-bold" id="pills-excel-tab" data-bs-toggle="pill" data-bs-target="#pills-excel" type="button" role="tab">📂 Importar Excel</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link fw-bold" id="pills-sheets-tab" data-bs-toggle="pill" data-bs-target="#pills-sheets" type="button" role="tab">☁️ Importar Google Sheets</button></li>
         </ul>
-        
         <div class="tab-content" id="pills-tabContent">
             <div class="tab-pane fade show active" id="pills-excel" role="tabpanel">
                 <label class="form-label text-muted">Selecione seus arquivos (.xlsx ou .csv):</label>
@@ -45,14 +36,12 @@
                     <button class="btn btn-success fw-bold px-4" onclick="processarExcelVisual()">📥 Processar Excel</button>
                 </div>
             </div>
-            
             <div class="tab-pane fade" id="pills-sheets" role="tabpanel">
                 <label class="form-label text-muted">Cole o link da sua planilha (Google Sheets):</label>
                 <div class="d-flex gap-2">
                     <input type="text" id="linkSheets" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/...">
                     <button class="btn btn-primary fw-bold px-4 text-nowrap" onclick="importarDoSheets()">📥 Puxar Dados</button>
                 </div>
-                <small class="text-danger mt-1 d-block">⚠️ A planilha precisa estar configurada como "Qualquer pessoa com o link".</small>
             </div>
         </div>
     </div>
@@ -66,28 +55,22 @@
                 <button class="btn btn-danger btn-sm" onclick="limparTabela()">🧹 Limpar Tudo</button>
             </div>
         </div>
-        
         <div class="alert alert-info py-2" style="font-size: 0.9rem;">
-            💡 <strong>CTRL+V Mágico:</strong> Você pode copiar um texto bagunçado de qualquer lugar com nomes e CPFs, clicar no fundo desta tela e dar <b>CTRL+V</b>. O robô vai caçar os CPFs e limpar a lista sozinho!
+            💡 <strong>CTRL+V Mágico:</strong> Copie um texto de qualquer lugar com nomes e CPFs, clique no fundo desta tela e dê <b>CTRL+V</b>.
         </div>
-
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle text-center" style="font-size: 0.9rem;">
                 <thead class="table-dark">
                     <tr>
                         <th style="width: 40px;"><input type="checkbox" id="chkTodos" class="form-check-input" onclick="toggleSelecionarTodos(this)"></th>
-                        <th>Cód</th>
-                        <th>Colaborador</th>
-                        <th>CPF</th>
-                        <th>Admissão</th>
+                        <th>Cód</th><th>Colaborador</th><th>CPF</th><th>Admissão</th>
                         <th>🛠️ NR 06<br><input type="checkbox" class="form-check-input" onclick="toggleColunaNR('06', this.checked)"> Todos</th>
                         <th>⚙️ NR 12<br><input type="checkbox" class="form-check-input" onclick="toggleColunaNR('12', this.checked)"> Todos</th>
                         <th>🏗️ NR 18<br><input type="checkbox" class="form-check-input" onclick="toggleColunaNR('18', this.checked)"> Todos</th>
                         <th>🧗 NR 35<br><input type="checkbox" class="form-check-input" onclick="toggleColunaNR('35', this.checked)"> Todos</th>
                     </tr>
                 </thead>
-                <tbody id="funcTableBody">
-                    </tbody>
+                <tbody id="funcTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -103,10 +86,25 @@
                 <label class="form-label text-muted">Nome Completo</label>
                 <input type="text" id="tstNome" class="form-control text-uppercase" placeholder="Ex: JOÃO DA SILVA">
             </div>
+            
             <div class="col-md-3">
-                <label class="form-label text-muted">Nº Registro (/UF)</label>
-                <input type="text" id="tstReg" class="form-control text-uppercase" placeholder="Ex: 0000000/PR">
+                <label class="form-label text-muted">Nº Registro e UF</label>
+                <div class="input-group">
+                    <input type="text" id="tstRegNum" class="form-control text-uppercase" placeholder="0000000">
+                    <select id="tstRegUF" class="form-select" style="max-width: 80px;">
+                        <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                        <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                        <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                        <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                        <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                        <option value="PR" selected>PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                        <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+                        <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                        <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+                    </select>
+                </div>
             </div>
+
             <div class="col-md-3">
                 <label class="form-label d-block text-muted">Normas Autorizadas:</label>
                 <div class="form-check form-check-inline"><input class="form-check-input tst-nr" type="checkbox" value="NR 06"> <label>06</label></div>
@@ -131,7 +129,6 @@
                 </div>
             </div>
         </div>
-
         <div id="tstList" class="mt-3"></div>
     </div>
 
@@ -156,18 +153,13 @@
         <div class="d-none d-md-block text-center">
             Desenvolvido por:<br>
             <strong>Eng. Daniel Filipe Rosa (DDFR LTDA)</strong> e <strong>TST Caroline Ávila (C.A Segurança do Trabalho LTDA)</strong><br>
-            📷 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a> | 
-            ✉️ <a href="mailto:danielf.r@hotmail.com?subject=Dúvida%20-%20Portal%20de%20Certificados">Email: danielf.r@hotmail.com</a>
+            📷 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a> | ✉️ <a href="mailto:danielf.r@hotmail.com">Email: danielf.r@hotmail.com</a>
         </div>
         <div class="d-block d-md-none text-center">
-            Desenvolvido por:<br>
-            <strong>Eng. Daniel Filipe Rosa</strong><br>
-            (DDFR LTDA)<br>
-            📷 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a><br>
-            ✉️ <a href="mailto:danielf.r@hotmail.com?subject=Dúvida%20-%20Portal%20de%20Certificados">Email: danielf.r@hotmail.com</a>
+            Desenvolvido por:<br><strong>Eng. Daniel Filipe Rosa</strong><br>(DDFR LTDA)<br>
+            📷 <a href="https://instagram.com/eng.daniel.filipe" target="_blank">@eng.daniel.filipe</a><br>✉️ <a href="mailto:danielf.r@hotmail.com">Email: danielf.r@hotmail.com</a>
             <hr style="border-top: 1px solid rgba(255,255,255,0.2); margin: 15px 20%;">
-            <strong>TST Caroline Ávila</strong><br>
-            (C.A Segurança do Trabalho LTDA)
+            <strong>TST Caroline Ávila</strong><br>(C.A Segurança do Trabalho LTDA)
         </div>
     </div>
 
@@ -177,5 +169,3 @@
 <script src="app.js"></script>
 </body>
 </html>
-
-
