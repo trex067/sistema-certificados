@@ -331,19 +331,35 @@ async function gerarCertificados(destino) {
     if (pacote.funcionarios.length === 0) return alert("Nenhum certificado foi marcado para geração (ative as chaves verdes).");
 
     const status = document.getElementById('statusProcessamento');
-    status.innerHTML = `⌛ Processando no Google Drive... (Isso pode levar alguns segundos)`;
-    status.className = "mt-3 fw-bold text-center text-primary";
+    status.className = "mt-3 p-3 rounded fw-bold text-center text-primary";
+    status.style.backgroundColor = "var(--cor-input-bg)";
+    status.style.border = "1px solid var(--cor-borda)";
+    status.innerHTML = `⌛ Processando no Google Drive...<br><small class="text-muted">Isso leva cerca de 2 a 3 segundos por certificado. Não feche a página!</small>`;
 
     try {
         const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pacote) });
         const result = await response.json();
+        
         if (result.sucesso) {
-            status.className = "mt-3 fw-bold text-center text-success";
-            status.innerHTML = `✅ Sucesso! ${result.total} certificados processados.`;
-            if (destino === 'ZIP' && result.link) status.innerHTML += `<br>🔗 <a href="${result.link}" target="_blank">BAIXAR ARQUIVO .ZIP</a>`;
+            // CACHE VISUAL: Mostra o botão de baixar indepedente se foi por e-mail ou não
+            status.className = "mt-3 p-4 rounded text-center";
+            status.style.backgroundColor = "#d4edda";
+            status.style.color = "#155724";
+            status.style.border = "2px solid #c3e6cb";
+            
+            let txtSucesso = `Foram gerados ${result.total} certificados com sucesso!`;
+            if (destino === 'EMAIL') txtSucesso += `<br>📧 O E-mail foi enviado com o arquivo ZIP em anexo.`;
+
+            status.innerHTML = `
+                <h4 class="fw-bold mb-2">✅ Processamento Concluído!</h4>
+                <p class="mb-3">${txtSucesso}</p>
+                <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    📥 BAIXAR ARQUIVO .ZIP AGORA
+                </a>
+            `;
         } else throw new Error(result.erro);
     } catch (error) {
-        status.className = "mt-3 fw-bold text-center text-danger";
+        status.className = "mt-3 p-3 rounded fw-bold text-center text-danger";
         status.innerHTML = `❌ Falha: ${error.message}`;
     }
 }
