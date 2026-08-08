@@ -1,7 +1,6 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxZhML4F2aBDdrxwhuRO83fSMVY5tVeOjRhY0VpFQIDvGxoXzZSoFdKdeqjVAO9Lc24Nw/exec";
 let listaFuncionarios = [];
 let listaTSTs = [];
-let assinaturaDataUrl = null;
 
 // ==========================================
 // PUXAR LOGO DO GOOGLE (COM TRATAMENTO SVG)
@@ -13,7 +12,6 @@ window.addEventListener('DOMContentLoaded', async () => {
             const data = await response.json();
             if (data.sucesso && data.logoId) {
                 const imgLogo = document.getElementById('logoEmpresa');
-                // O truque de ouro: Puxar como Thumbnail força o Google a rasterizar SVGs, exibindo a imagem perfeitamente!
                 imgLogo.src = `https://drive.google.com/thumbnail?id=${data.logoId}&sz=w800`;
                 imgLogo.style.display = "inline-block";
             }
@@ -207,7 +205,9 @@ function renderizarTabela() {
     });
 }
 
-// TST
+// ==========================================
+// TST & ASSINATURA (CORRIGIDO)
+// ==========================================
 function adicionarTST() {
     const nome = document.getElementById('tstNome').value.trim().toUpperCase();
     const regNum = document.getElementById('tstRegNum').value.trim().toUpperCase();
@@ -220,25 +220,46 @@ function adicionarTST() {
     for (let nr of nrs) {
         if (listaTSTs.find(t => t.nrs.includes(nr))) return alert(`A ${nr} já está associada a outro TST.`);
     }
+
+    // CAPTURA A ASSINATURA NO ATO DA INCLUSÃO
+    let assinaturaTST = null;
+    if (canvasTocado) {
+        assinaturaTST = canvas.toDataURL("image/png");
+    }
     
-    listaTSTs.push({ nome, registro: `${regNum}/${regUF}`, nrs });
+    listaTSTs.push({ 
+        nome, 
+        registro: `${regNum}/${regUF}`, 
+        nrs, 
+        assinatura: assinaturaTST 
+    });
     
+    // Limpa os campos
     document.getElementById('tstNome').value = '';
     document.getElementById('tstRegNum').value = '';
     document.querySelectorAll('.tst-nr').forEach(cb => cb.checked = false);
+    
+    // Limpa o quadro automaticamente
+    limparAssinatura();
     renderizarTSTs();
 }
+
 function excluirTST(index) { listaTSTs.splice(index, 1); renderizarTSTs(); }
 function limparTSTs() { if(confirm("Apagar todos os Instrutores?")) { listaTSTs = []; renderizarTSTs(); } }
+
 function renderizarTSTs() {
     document.getElementById('tstList').innerHTML = listaTSTs.map((tst, i) => `
         <div class="alert alert-secondary d-flex justify-content-between align-items-center p-2 mb-2" style="background-color: var(--cor-input-bg); border-color: var(--cor-borda);">
-            <div style="color: var(--cor-texto);"><strong>${tst.nome}</strong> (${tst.registro}) - <span class="badge bg-primary">${tst.nrs.join(', ')}</span></div>
+            <div style="color: var(--cor-texto);">
+                <strong>${tst.nome}</strong> (${tst.registro})
+                ${tst.assinatura ? '<span class="badge bg-success ms-1">✍️ Assinado</span>' : ''}
+                <br><small class="text-muted">Autorizado: <span class="badge bg-primary">${tst.nrs.join(', ')}</span></small>
+            </div>
             <button class="btn btn-sm btn-outline-danger" onclick="excluirTST(${i})">🗑️ Remover</button>
         </div>`).join('');
 }
 
-// Assinatura
+// Canvas
 const canvas = document.getElementById('canvasAssinatura'), ctx = canvas.getContext('2d');
 let desenhando = false, canvasTocado = false;
 function iniciarDesenho(e) { desenhando = true; desenhar(e); canvasTocado = true; }
@@ -255,6 +276,9 @@ canvas.addEventListener('mouseup', pararDesenho); canvas.addEventListener('mouse
 canvas.addEventListener('touchstart', iniciarDesenho, {passive: false}); canvas.addEventListener('touchmove', desenhar, {passive: false}); canvas.addEventListener('touchend', pararDesenho);
 function limparAssinatura() { ctx.clearRect(0, 0, canvas.width, canvas.height); canvasTocado = false; }
 
+// ==========================================
+// VALIDAÇÕES E EXPORTAÇÃO
+// ==========================================
 function formatarEValidarCPF(valor) {
     if (!valor) return { valido: false };
     let cpf = valor.replace(/\D/g, '').padStart(11, '0');
@@ -293,9 +317,6 @@ function converterData(valor) {
     return new Date();
 }
 
-// ==========================================
-// MÓDULO DE GERAÇÃO: UI AMIGÁVEL E BARRA DE PROGRESSO
-// ==========================================
 async function gerarCertificados(destino) {
     const footer = document.getElementById('creditos-dev');
     if (!footer || !footer.innerHTML.includes('DDFR LTDA')) return;
@@ -309,13 +330,12 @@ async function gerarCertificados(destino) {
     }
     
     if (typeof API_URL === 'undefined' || API_URL.includes("SECRET")) return alert("Erro: Conecte a API via GitHub Secrets.");
-    if (canvasTocado) assinaturaDataUrl = canvas.toDataURL("image/png");
 
     const pacote = { destino: destino, emails: emailsDestino, tsts: listaTSTs, funcionarios: [] };
 
     let totalCerts = 0;
     listaFuncionarios.forEach((f, i) => {
-        let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [], assinatura: assinaturaDataUrl };
+        let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [] };
         ['06', '12', '18', '35'].forEach(nr => {
             if (document.getElementById(`nr${nr}chk${i}`).checked) {
                 const dataBr = document.getElementById(`nr${nr}dt${i}`).value.split('-').reverse().join('/');
@@ -329,11 +349,9 @@ async function gerarCertificados(destino) {
 
     if (pacote.funcionarios.length === 0) return alert("Nenhum certificado foi marcado para geração (ative as chaves verdes).");
 
-    // DESABILITA BOTÕES PARA NÃO BUGAR DURANTE O PROCESSO
     document.getElementById('btnZip').disabled = true;
     document.getElementById('btnEmail').disabled = true;
 
-    // Interface do EstagIArio
     const status = document.getElementById('statusProcessamento');
     status.className = "mt-3 p-4 rounded shadow-sm text-center";
     status.style.backgroundColor = "var(--cor-input-bg)";
@@ -343,13 +361,10 @@ async function gerarCertificados(destino) {
     
     status.innerHTML = `
         <div class="d-flex flex-column align-items-center">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background-color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                🤖
-            </div>
+            <div style="width: 80px; height: 80px; border-radius: 50%; background-color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🤖</div>
             <p class="fst-italic px-3" style="color: var(--cor-texto); font-size: 1.1rem; max-width: 600px;">
                 "Já recebi aqui o seu pedido e estou indo logo ali para gerar os seus <strong>${totalCerts}</strong> certificados. Daqui a pouquinho eu volto com eles prontos, blz? Não sai daí não! ✨"
             </p>
-            
             <div class="progress w-100 mt-3" style="height: 25px; border-radius: 12px; background-color: var(--cor-fundo);">
                 <div id="barraProgresso" class="progress-bar progress-bar-striped progress-bar-animated" style="background-color: var(--cor-primaria); width: 0%; font-weight: bold; font-size: 1rem;">0%</div>
             </div>
@@ -357,27 +372,17 @@ async function gerarCertificados(destino) {
         </div>
     `;
 
-    // Lógica da Barra de Progresso
-    let progresso = 0;
-    let tempoRestante = tempoEstimadoSegundos;
-    
+    let progresso = 0, tempoRestante = tempoEstimadoSegundos;
     const interval = setInterval(() => {
-        progresso += (100 / (tempoEstimadoSegundos * 10)); // Atualiza a cada décimo de segundo
+        progresso += (100 / (tempoEstimadoSegundos * 10)); 
         tempoRestante -= 0.1;
-
-        if (progresso >= 99) progresso = 99; // Segura em 99% até a nuvem responder
+        if (progresso >= 99) progresso = 99; 
         if (tempoRestante < 0) tempoRestante = 0;
 
         const barra = document.getElementById('barraProgresso');
-        if(barra) {
-            barra.style.width = progresso + '%';
-            barra.innerText = Math.floor(progresso) + '%';
-        }
-
+        if(barra) { barra.style.width = progresso + '%'; barra.innerText = Math.floor(progresso) + '%'; }
         const txtTempo = document.getElementById('tempoTexto');
-        if(txtTempo) {
-            txtTempo.innerText = progresso === 99 ? "Finalizando os últimos detalhes..." : `Tempo estimado restante: ${Math.ceil(tempoRestante)} segundo(s)`;
-        }
+        if(txtTempo) txtTempo.innerText = progresso === 99 ? "Finalizando os últimos detalhes..." : `Tempo estimado restante: ${Math.ceil(tempoRestante)} segundo(s)`;
     }, 100);
 
     try {
@@ -398,33 +403,20 @@ async function gerarCertificados(destino) {
                 let txtSucesso = `Foram gerados <strong>${result.total}</strong> certificados com sucesso!`;
                 if (destino === 'EMAIL') txtSucesso += `<br>📧 O E-mail foi enviado com o arquivo ZIP em anexo.`;
 
-                // TELA DE SUCESSO (Com botão para liberar novas gerações)
                 status.innerHTML = `
                     <div class="d-flex flex-column align-items-center">
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #28a745; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                            🥳
-                        </div>
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #28a745; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🥳</div>
                         <h4 class="fw-bold mb-2 text-success">Missão Cumprida!</h4>
                         <p class="mb-3 text-dark" style="font-size: 1.1rem;">${txtSucesso}</p>
-                        
-                        <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100 mb-3" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                            📥 BAIXAR ARQUIVO .ZIP AGORA
-                        </a>
-                        
-                        <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-secondary w-100 fw-bold">
-                            🔄 Liberar para Gerar Mais Certificados
-                        </button>
+                        <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100 mb-3" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">📥 BAIXAR ARQUIVO .ZIP AGORA</a>
+                        <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-secondary w-100 fw-bold">🔄 Liberar para Gerar Mais Certificados</button>
                     </div>
                 `;
-                
-                // DESTRAVA OS BOTÕES PARA USO FUTURO
                 document.getElementById('btnZip').disabled = false;
                 document.getElementById('btnEmail').disabled = false;
-            }, 600); // pequeno atraso para a pessoa ver o 100% bater
+            }, 600); 
             
-        } else {
-            throw new Error(result.erro);
-        }
+        } else throw new Error(result.erro);
     } catch (error) {
         clearInterval(interval);
         status.style.backgroundColor = "#f8d7da";
@@ -434,9 +426,7 @@ async function gerarCertificados(destino) {
             <div class="d-flex flex-column align-items-center p-3">
                 <h5 class="text-danger fw-bold">❌ Poxa, deu uma falha na conexão</h5>
                 <p class="text-dark">${error.message}</p>
-                <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-danger mt-2 fw-bold">
-                    Tentar Novamente
-                </button>
+                <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-danger mt-2 fw-bold">Tentar Novamente</button>
             </div>
         `;
         document.getElementById('btnZip').disabled = false;
