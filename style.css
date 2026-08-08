@@ -115,3 +115,32 @@ h2, h5 { color: var(--cor-secundaria) !important; }
     cursor: crosshair;
     touch-action: none;
 }
+
+/* style.css - Adicionar no final */
+/* Estilos para a Barra de Progresso Real */
+.progress {
+    background-color: var(--cor-fundo) !important;
+    border: 1px solid var(--cor-borda);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+/* Garante legibilidade do texto dentro da barra no modo claro */
+[data-theme="light"] .progress-bar {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Suporte para o modo escuro nas telas de sucesso/erro */
+[data-theme="dark"] #statusProcessamento .text-dark {
+    color: #e0e0e0 !important;
+}
+
+/* Switcher Verde customizado para as NRs */
+.form-switch .form-check-input:checked {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+}
