@@ -3,7 +3,9 @@ let listaFuncionarios = [];
 let listaTSTs = [];
 let assinaturaDataUrl = null;
 
-// Puxar Logo
+// ==========================================
+// PUXAR LOGO DO GOOGLE (COM TRATAMENTO SVG)
+// ==========================================
 window.addEventListener('DOMContentLoaded', async () => {
     if (typeof API_URL !== 'undefined' && !API_URL.includes("SECRET")) {
         try {
@@ -11,14 +13,15 @@ window.addEventListener('DOMContentLoaded', async () => {
             const data = await response.json();
             if (data.sucesso && data.logoId) {
                 const imgLogo = document.getElementById('logoEmpresa');
-                imgLogo.src = `https://drive.google.com/uc?id=${data.logoId}`;
+                // O truque de ouro: Puxar como Thumbnail força o Google a rasterizar SVGs, exibindo a imagem perfeitamente!
+                imgLogo.src = `https://drive.google.com/thumbnail?id=${data.logoId}&sz=w800`;
                 imgLogo.style.display = "inline-block";
             }
         } catch (e) { console.log("Aviso: Logo dinâmica não carregada."); }
     }
 });
 
-// Tema
+// Tema Claro/Escuro
 const themeToggleBtn = document.getElementById('themeToggle');
 const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 document.documentElement.setAttribute('data-theme', currentTheme);
@@ -204,7 +207,7 @@ function renderizarTabela() {
     });
 }
 
-// TST (AGORA COM JUNÇÃO DO NÚMERO + UF)
+// TST
 function adicionarTST() {
     const nome = document.getElementById('tstNome').value.trim().toUpperCase();
     const regNum = document.getElementById('tstRegNum').value.trim().toUpperCase();
@@ -252,30 +255,22 @@ canvas.addEventListener('mouseup', pararDesenho); canvas.addEventListener('mouse
 canvas.addEventListener('touchstart', iniciarDesenho, {passive: false}); canvas.addEventListener('touchmove', desenhar, {passive: false}); canvas.addEventListener('touchend', pararDesenho);
 function limparAssinatura() { ctx.clearRect(0, 0, canvas.width, canvas.height); canvasTocado = false; }
 
-// ==========================================
-// VALIDADOR MATEMÁTICO REAL DO CPF (CORRIGIDO)
-// ==========================================
 function formatarEValidarCPF(valor) {
     if (!valor) return { valido: false };
     let cpf = valor.replace(/\D/g, '').padStart(11, '0');
-    
-    // Barrar CPFs vazios ou com números repetidos (111.111.111-11)
     if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return { valido: false };
     
     let soma = 0, resto;
-    
-    // Validação Matemática do 1º Dígito (Peso 10 a 2)
     for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
     resto = (soma * 10) % 11;
     if (resto === 10 || resto === 11) resto = 0;
     if (resto !== parseInt(cpf.substring(9, 10))) return { valido: false };
     
-    // Validação Matemática do 2º Dígito (Peso 11 a 2)
     soma = 0;
     for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
     resto = (soma * 10) % 11;
     if (resto === 10 || resto === 11) resto = 0;
-    if (resto !== parseInt(cpf.substring(10, 11))) return { valido: false }; // Aqui a mentira cai!
+    if (resto !== parseInt(cpf.substring(10, 11))) return { valido: false }; 
     
     return { valido: true, cpfFormatado: cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") };
 }
@@ -298,12 +293,14 @@ function converterData(valor) {
     return new Date();
 }
 
+// ==========================================
+// MÓDULO DE GERAÇÃO: UI AMIGÁVEL E BARRA DE PROGRESSO
+// ==========================================
 async function gerarCertificados(destino) {
     const footer = document.getElementById('creditos-dev');
     if (!footer || !footer.innerHTML.includes('DDFR LTDA')) return;
     if (listaFuncionarios.length === 0) return alert("Importe ou adicione funcionários na tabela.");
     
-    // A NOVA TRAVA DO E-MAIL VAZIO
     const emailsInput = document.getElementById('emailsDestino').value;
     const emailsDestino = emailsInput.split(',').map(e => e.trim()).filter(e => e);
     
@@ -316,6 +313,7 @@ async function gerarCertificados(destino) {
 
     const pacote = { destino: destino, emails: emailsDestino, tsts: listaTSTs, funcionarios: [] };
 
+    let totalCerts = 0;
     listaFuncionarios.forEach((f, i) => {
         let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [], assinatura: assinaturaDataUrl };
         ['06', '12', '18', '35'].forEach(nr => {
@@ -323,6 +321,7 @@ async function gerarCertificados(destino) {
                 const dataBr = document.getElementById(`nr${nr}dt${i}`).value.split('-').reverse().join('/');
                 if (!listaTSTs.find(t => t.nrs.includes(`NR ${nr}`))) throw new Error(`Falta cadastrar TST para a NR ${nr}.`);
                 funcReq.nrs.push({ tipo: `NR ${nr}`, data: dataBr });
+                totalCerts++;
             }
         });
         if (funcReq.nrs.length > 0) pacote.funcionarios.push(funcReq);
@@ -330,36 +329,117 @@ async function gerarCertificados(destino) {
 
     if (pacote.funcionarios.length === 0) return alert("Nenhum certificado foi marcado para geração (ative as chaves verdes).");
 
+    // DESABILITA BOTÕES PARA NÃO BUGAR DURANTE O PROCESSO
+    document.getElementById('btnZip').disabled = true;
+    document.getElementById('btnEmail').disabled = true;
+
+    // Interface do EstagIArio
     const status = document.getElementById('statusProcessamento');
-    status.className = "mt-3 p-3 rounded fw-bold text-center text-primary";
+    status.className = "mt-3 p-4 rounded shadow-sm text-center";
     status.style.backgroundColor = "var(--cor-input-bg)";
     status.style.border = "1px solid var(--cor-borda)";
-    status.innerHTML = `⌛ Processando no Google Drive...<br><small class="text-muted">Isso leva cerca de 2 a 3 segundos por certificado. Não feche a página!</small>`;
+    
+    let tempoEstimadoSegundos = Math.max(Math.ceil(totalCerts * 2.5), 5); 
+    
+    status.innerHTML = `
+        <div class="d-flex flex-column align-items-center">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background-color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                🤖
+            </div>
+            <p class="fst-italic px-3" style="color: var(--cor-texto); font-size: 1.1rem; max-width: 600px;">
+                "Já recebi aqui o seu pedido e estou indo logo ali para gerar os seus <strong>${totalCerts}</strong> certificados. Daqui a pouquinho eu volto com eles prontos, blz? Não sai daí não! ✨"
+            </p>
+            
+            <div class="progress w-100 mt-3" style="height: 25px; border-radius: 12px; background-color: var(--cor-fundo);">
+                <div id="barraProgresso" class="progress-bar progress-bar-striped progress-bar-animated" style="background-color: var(--cor-primaria); width: 0%; font-weight: bold; font-size: 1rem;">0%</div>
+            </div>
+            <p id="tempoTexto" class="mt-2 fw-bold" style="color: var(--cor-secundaria);">Tempo estimado: ${tempoEstimadoSegundos} segundo(s)</p>
+        </div>
+    `;
+
+    // Lógica da Barra de Progresso
+    let progresso = 0;
+    let tempoRestante = tempoEstimadoSegundos;
+    
+    const interval = setInterval(() => {
+        progresso += (100 / (tempoEstimadoSegundos * 10)); // Atualiza a cada décimo de segundo
+        tempoRestante -= 0.1;
+
+        if (progresso >= 99) progresso = 99; // Segura em 99% até a nuvem responder
+        if (tempoRestante < 0) tempoRestante = 0;
+
+        const barra = document.getElementById('barraProgresso');
+        if(barra) {
+            barra.style.width = progresso + '%';
+            barra.innerText = Math.floor(progresso) + '%';
+        }
+
+        const txtTempo = document.getElementById('tempoTexto');
+        if(txtTempo) {
+            txtTempo.innerText = progresso === 99 ? "Finalizando os últimos detalhes..." : `Tempo estimado restante: ${Math.ceil(tempoRestante)} segundo(s)`;
+        }
+    }, 100);
 
     try {
         const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pacote) });
         const result = await response.json();
         
-        if (result.sucesso) {
-            // CACHE VISUAL: Mostra o botão de baixar indepedente se foi por e-mail ou não
-            status.className = "mt-3 p-4 rounded text-center";
-            status.style.backgroundColor = "#d4edda";
-            status.style.color = "#155724";
-            status.style.border = "2px solid #c3e6cb";
-            
-            let txtSucesso = `Foram gerados ${result.total} certificados com sucesso!`;
-            if (destino === 'EMAIL') txtSucesso += `<br>📧 O E-mail foi enviado com o arquivo ZIP em anexo.`;
+        clearInterval(interval);
 
-            status.innerHTML = `
-                <h4 class="fw-bold mb-2">✅ Processamento Concluído!</h4>
-                <p class="mb-3">${txtSucesso}</p>
-                <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                    📥 BAIXAR ARQUIVO .ZIP AGORA
-                </a>
-            `;
-        } else throw new Error(result.erro);
+        if (result.sucesso) {
+            document.getElementById('barraProgresso').style.width = '100%';
+            document.getElementById('barraProgresso').innerText = '100%';
+            
+            setTimeout(() => {
+                status.style.backgroundColor = "#d4edda";
+                status.style.color = "#155724";
+                status.style.border = "2px solid #c3e6cb";
+                
+                let txtSucesso = `Foram gerados <strong>${result.total}</strong> certificados com sucesso!`;
+                if (destino === 'EMAIL') txtSucesso += `<br>📧 O E-mail foi enviado com o arquivo ZIP em anexo.`;
+
+                // TELA DE SUCESSO (Com botão para liberar novas gerações)
+                status.innerHTML = `
+                    <div class="d-flex flex-column align-items-center">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #28a745; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                            🥳
+                        </div>
+                        <h4 class="fw-bold mb-2 text-success">Missão Cumprida!</h4>
+                        <p class="mb-3 text-dark" style="font-size: 1.1rem;">${txtSucesso}</p>
+                        
+                        <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100 mb-3" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                            📥 BAIXAR ARQUIVO .ZIP AGORA
+                        </a>
+                        
+                        <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-secondary w-100 fw-bold">
+                            🔄 Liberar para Gerar Mais Certificados
+                        </button>
+                    </div>
+                `;
+                
+                // DESTRAVA OS BOTÕES PARA USO FUTURO
+                document.getElementById('btnZip').disabled = false;
+                document.getElementById('btnEmail').disabled = false;
+            }, 600); // pequeno atraso para a pessoa ver o 100% bater
+            
+        } else {
+            throw new Error(result.erro);
+        }
     } catch (error) {
-        status.className = "mt-3 p-3 rounded fw-bold text-center text-danger";
-        status.innerHTML = `❌ Falha: ${error.message}`;
+        clearInterval(interval);
+        status.style.backgroundColor = "#f8d7da";
+        status.style.border = "1px solid #f5c6cb";
+        status.style.color = "#721c24";
+        status.innerHTML = `
+            <div class="d-flex flex-column align-items-center p-3">
+                <h5 class="text-danger fw-bold">❌ Poxa, deu uma falha na conexão</h5>
+                <p class="text-dark">${error.message}</p>
+                <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-danger mt-2 fw-bold">
+                    Tentar Novamente
+                </button>
+            </div>
+        `;
+        document.getElementById('btnZip').disabled = false;
+        document.getElementById('btnEmail').disabled = false;
     }
 }
