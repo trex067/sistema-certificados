@@ -317,11 +317,18 @@ function converterData(valor) {
     return new Date();
 }
 
+// ============================================================================
+// NOVO SISTEMA DE GERAÇÃO: UI AMIGÁVEL COM BARRA DE PROGRESSO E ESTAGIARIO ✨
+// ==========================================
 async function gerarCertificados(destino) {
     const footer = document.getElementById('creditos-dev');
-    if (!footer || !footer.innerHTML.includes('DDFR LTDA')) return;
+    if (!footer || !footer.innerHTML.includes('DDFR LTDA')) {
+        return; // Proteção contra violação de direitos autorais
+    }
+
     if (listaFuncionarios.length === 0) return alert("Importe ou adicione funcionários na tabela.");
     
+    // Trava do E-mail Vazio
     const emailsInput = document.getElementById('emailsDestino').value;
     const emailsDestino = emailsInput.split(',').map(e => e.trim()).filter(e => e);
     
@@ -329,17 +336,24 @@ async function gerarCertificados(destino) {
         return alert("⚠️ ERRO: Digite pelo menos um endereço de e-mail na caixa acima para enviar.");
     }
     
-    if (typeof API_URL === 'undefined' || API_URL.includes("SECRET")) return alert("Erro: Conecte a API via GitHub Secrets.");
+    if (typeof API_URL === 'undefined' || API_URL.includes("SECRET")) {
+        return alert("Erro de Conexão: Conecte a API via GitHub Secrets.");
+    }
+    
+    if (canvasTocado) assinaturaDataUrl = canvas.toDataURL("image/png");
 
     const pacote = { destino: destino, emails: emailsDestino, tsts: listaTSTs, funcionarios: [] };
 
+    // Contador real de quantos certificados vão ser gerados
     let totalCerts = 0;
     listaFuncionarios.forEach((f, i) => {
-        let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [] };
+        let funcReq = { codigo: f.codigo, nome: f.nome, cpf: f.cpf, nrs: [], assinatura: assinaturaDataUrl };
         ['06', '12', '18', '35'].forEach(nr => {
             if (document.getElementById(`nr${nr}chk${i}`).checked) {
                 const dataBr = document.getElementById(`nr${nr}dt${i}`).value.split('-').reverse().join('/');
-                if (!listaTSTs.find(t => t.nrs.includes(`NR ${nr}`))) throw new Error(`Falta cadastrar TST para a NR ${nr}.`);
+                if (!listaTSTs.find(t => t.nrs.includes(`NR ${nr}`))) {
+                    throw new Error(`Falta cadastrar um TST habilitado para a NR ${nr}.`);
+                }
                 funcReq.nrs.push({ tipo: `NR ${nr}`, data: dataBr });
                 totalCerts++;
             }
@@ -349,49 +363,74 @@ async function gerarCertificados(destino) {
 
     if (pacote.funcionarios.length === 0) return alert("Nenhum certificado foi marcado para geração (ative as chaves verdes).");
 
+    // DESABILITA OS BOTÕES DE GERAR (Para não bugar se a pessoa clicar de novo)
     document.getElementById('btnZip').disabled = true;
     document.getElementById('btnEmail').disabled = true;
 
+    // Interface do EstagIArio Animado (MUDANÇA DE LAYOUT AQUI)
     const status = document.getElementById('statusProcessamento');
     status.className = "mt-3 p-4 rounded shadow-sm text-center";
     status.style.backgroundColor = "var(--cor-input-bg)";
     status.style.border = "1px solid var(--cor-borda)";
     
-    let tempoEstimadoSegundos = Math.max(Math.ceil(totalCerts * 2.5), 5); 
+    // Algoritmo de tempo estimado (Cerca de 2.5s por certificado)
+    let tempoEstimadoSegundos = Math.ceil(totalCerts * 2.5); 
+    if(tempoEstimadoSegundos < 5) tempoEstimadoSegundos = 5; // Pega pelo menos 5s para os logos carregarem
     
+    // A foto é puxada do Drive dinamicamente usando a chave que já salvamos (config.linkAvatar)
+    const ss = SpreadsheetApp.getActiveSpreadsheet(); // Isso roda no backend, o front só recebe o link
+    const config = carregarConfiguracoesPlanilha(ss); // Esse link deve ir no GET inicial do site
+
+    // MONTA O LAYOUT DO ESTAGIARIO FALANDO
     status.innerHTML = `
         <div class="d-flex flex-column align-items-center">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background-color: var(--cor-primaria); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🤖</div>
+            <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 4px solid var(--cor-primaria); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                <img src="${config.linkAvatar}" alt="EstagIArio ✨" style="width: 100%; height: 100%; object-fit: cover;"/>
+            </div>
+            
             <p class="fst-italic px-3" style="color: var(--cor-texto); font-size: 1.1rem; max-width: 600px;">
                 "Já recebi aqui o seu pedido e estou indo logo ali para gerar os seus <strong>${totalCerts}</strong> certificados. Daqui a pouquinho eu volto com eles prontos, blz? Não sai daí não! ✨"
             </p>
+            
             <div class="progress w-100 mt-3" style="height: 25px; border-radius: 12px; background-color: var(--cor-fundo);">
                 <div id="barraProgresso" class="progress-bar progress-bar-striped progress-bar-animated" style="background-color: var(--cor-primaria); width: 0%; font-weight: bold; font-size: 1rem;">0%</div>
             </div>
+            
             <p id="tempoTexto" class="mt-2 fw-bold" style="color: var(--cor-secundaria);">Tempo estimado: ${tempoEstimadoSegundos} segundo(s)</p>
         </div>
     `;
 
-    let progresso = 0, tempoRestante = tempoEstimadoSegundos;
+    // Lógica para preencher a barra e contar o tempo
+    let progresso = 0;
+    let tempoRestante = tempoEstimadoSegundos;
+    
     const interval = setInterval(() => {
-        progresso += (100 / (tempoEstimadoSegundos * 10)); 
+        progresso += (100 / (tempoEstimadoSegundos * 10)); // Atualiza a cada décimo de segundo para suavidade
         tempoRestante -= 0.1;
-        if (progresso >= 99) progresso = 99; 
+
+        if (progresso >= 99) progresso = 99; // Segura em 99% até a nuvem responder
         if (tempoRestante < 0) tempoRestante = 0;
 
         const barra = document.getElementById('barraProgresso');
-        if(barra) { barra.style.width = progresso + '%'; barra.innerText = Math.floor(progresso) + '%'; }
+        if(barra) {
+            barra.style.width = progresso + '%';
+            barra.innerText = Math.floor(progresso) + '%';
+        }
+
         const txtTempo = document.getElementById('tempoTexto');
-        if(txtTempo) txtTempo.innerText = progresso === 99 ? "Finalizando os últimos detalhes..." : `Tempo estimado restante: ${Math.ceil(tempoRestante)} segundo(s)`;
+        if(txtTempo) {
+            txtTempo.innerText = progresso === 99 ? "Finalizando os últimos detalhes..." : `Tempo estimado restante: ${Math.ceil(tempoRestante)} segundo(s)`;
+        }
     }, 100);
 
     try {
         const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pacote) });
         const result = await response.json();
         
-        clearInterval(interval);
+        clearInterval(interval); // Para a contagem regressiva
 
         if (result.sucesso) {
+            // Sucesso Total: Bate 100% e libera
             document.getElementById('barraProgresso').style.width = '100%';
             document.getElementById('barraProgresso').innerText = '100%';
             
@@ -401,22 +440,37 @@ async function gerarCertificados(destino) {
                 status.style.border = "2px solid #c3e6cb";
                 
                 let txtSucesso = `Foram gerados <strong>${result.total}</strong> certificados com sucesso!`;
-                if (destino === 'EMAIL') txtSucesso += `<br>📧 O E-mail foi enviado com o arquivo ZIP em anexo.`;
+                if (destino === 'EMAIL') {
+                    txtSucesso += `<br>📧 O E-mail foi enviado com o arquivo ZIP em anexo.`;
+                }
 
+                // TELA DE SUCESSO (Com botão para liberar novas gerações)
                 status.innerHTML = `
                     <div class="d-flex flex-column align-items-center">
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #28a745; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🥳</div>
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #28a745; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                            🥳
+                        </div>
                         <h4 class="fw-bold mb-2 text-success">Missão Cumprida!</h4>
                         <p class="mb-3 text-dark" style="font-size: 1.1rem;">${txtSucesso}</p>
-                        <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100 mb-3" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">📥 BAIXAR ARQUIVO .ZIP AGORA</a>
-                        <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-secondary w-100 fw-bold">🔄 Liberar para Gerar Mais Certificados</button>
+                        
+                        <a href="${result.link}" target="_blank" class="btn btn-success btn-lg fw-bold w-100 mb-3" style="box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                            📥 BAIXAR ARQUIVO .ZIP AGORA
+                        </a>
+                        
+                        <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-secondary w-100 fw-bold">
+                            🔄 Liberar para Gerar Mais Certificados
+                        </button>
                     </div>
                 `;
+                
+                // DESTRAVA OS BOTÕES PARA USO FUTURO
                 document.getElementById('btnZip').disabled = false;
                 document.getElementById('btnEmail').disabled = false;
-            }, 600); 
+            }, 600); // pequeno atraso para a pessoa ver o 100% bater
             
-        } else throw new Error(result.erro);
+        } else {
+            throw new Error(result.erro);
+        }
     } catch (error) {
         clearInterval(interval);
         status.style.backgroundColor = "#f8d7da";
@@ -426,7 +480,9 @@ async function gerarCertificados(destino) {
             <div class="d-flex flex-column align-items-center p-3">
                 <h5 class="text-danger fw-bold">❌ Poxa, deu uma falha na conexão</h5>
                 <p class="text-dark">${error.message}</p>
-                <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-danger mt-2 fw-bold">Tentar Novamente</button>
+                <button onclick="document.getElementById('statusProcessamento').innerHTML='';" class="btn btn-outline-danger mt-2 fw-bold">
+                    Tentar Novamente
+                </button>
             </div>
         `;
         document.getElementById('btnZip').disabled = false;
