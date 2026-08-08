@@ -1,4 +1,24 @@
 const API_URL = "API_URL_SECRET";
+
+// ==========================================
+// PUXAR A LOGO DA EMPRESA DIRETO DA PLANILHA
+// ==========================================
+window.addEventListener('DOMContentLoaded', async () => {
+    if (typeof API_URL !== 'undefined' && !API_URL.includes("SECRET")) {
+        try {
+            const response = await fetch(API_URL); // Faz um GET silencioso
+            const data = await response.json();
+            
+            if (data.sucesso && data.logoId) {
+                const imgLogo = document.getElementById('logoEmpresa');
+                imgLogo.src = `https://drive.google.com/uc?id=${data.logoId}`;
+                imgLogo.style.display = "inline-block";
+            }
+        } catch (e) {
+            console.log("Aviso: Não foi possível carregar a logo dinâmica.");
+        }
+    }
+});
 let listaFuncionarios = [];
 let listaTSTs = [];
 let assinaturaDataUrl = null;
